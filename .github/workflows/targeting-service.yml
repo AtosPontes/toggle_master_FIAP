@@ -1,6 +1,7 @@
 name: CI Targeting Service
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - 'apps/local/3-targeting-service/**'

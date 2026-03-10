@@ -1,6 +1,7 @@
 name: CI Auth Service
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - 'apps/local/1-auth-service/**'

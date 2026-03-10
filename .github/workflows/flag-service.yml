@@ -1,6 +1,7 @@
 name: CI Flag Service
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - 'apps/local/2-flag-service/**'
