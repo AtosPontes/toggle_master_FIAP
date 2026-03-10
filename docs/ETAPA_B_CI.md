@@ -28,10 +28,7 @@ Com `paths` por serviço para evitar execução desnecessária.
 
 Além disso, os workflows chamadores declaram permissões explícitas:
 
-- `contents: read`
-- `id-token: write`
-
-Isso é necessário para permitir OIDC no job de push para ECR do workflow reutilizável.
+- `contents: write`
 
 ## Estágios implementados
 
