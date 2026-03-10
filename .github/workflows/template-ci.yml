@@ -23,124 +23,49 @@ jobs:
   build_and_unit_test:
     name: Build & Unit Test
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ inputs.service_path }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Go
+      - name: Build & Unit Test (Go)
         if: ${{ inputs.language == 'go' }}
-        uses: actions/setup-go@v5
+        uses: ./.github/actions/ci-go-build
         with:
-          go-version-file: ${{ inputs.service_path }}/go.mod
-          cache-dependency-path: ${{ inputs.service_path }}/go.sum
+          service_path: ${{ inputs.service_path }}
 
-      - name: Setup Python
+      - name: Build & Unit Test (Python)
         if: ${{ inputs.language == 'python' }}
-        uses: actions/setup-python@v5
+        uses: ./.github/actions/ci-python-build
         with:
-          python-version: '3.11'
-
-      - name: Install Go dependencies
-        if: ${{ inputs.language == 'go' }}
-        run: go mod download
-
-      - name: Install Python dependencies
-        if: ${{ inputs.language == 'python' }}
-        run: |
-          pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          pip install pytest
-
-      - name: Run Go tests
-        if: ${{ inputs.language == 'go' }}
-        run: go test ./...
-
-      - name: Run Python tests (if available)
-        if: ${{ inputs.language == 'python' }}
-        run: |
-          if find . -type f \( -name 'test_*.py' -o -name '*_test.py' \) | grep -q .; then
-            pytest -q
-          else
-            echo "No Python unit tests found; skipping pytest."
-          fi
+          service_path: ${{ inputs.service_path }}
 
   linter_static_analysis:
     name: Linter / Static Analysis
     runs-on: ubuntu-latest
     needs: build_and_unit_test
-    defaults:
-      run:
-        working-directory: ${{ inputs.service_path }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Go
+      - name: Lint / Static Analysis (Go)
         if: ${{ inputs.language == 'go' }}
-        uses: actions/setup-go@v5
+        uses: ./.github/actions/ci-go-lint
         with:
-          go-version-file: ${{ inputs.service_path }}/go.mod
-          cache-dependency-path: ${{ inputs.service_path }}/go.sum
+          service_path: ${{ inputs.service_path }}
 
-      - name: Setup Python
+      - name: Lint / Static Analysis (Python)
         if: ${{ inputs.language == 'python' }}
-        uses: actions/setup-python@v5
+        uses: ./.github/actions/ci-python-lint
         with:
-          python-version: '3.11'
-
-      - name: Install Go dependencies
-        if: ${{ inputs.language == 'go' }}
-        run: go mod download
-
-      - name: Run golangci-lint
-        if: ${{ inputs.language == 'go' }}
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: latest
-          working-directory: ${{ inputs.service_path }}
-          args: --timeout=5m --issues-exit-code=0
-
-      - name: Install Python lint tools
-        if: ${{ inputs.language == 'python' }}
-        run: |
-          pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          pip install flake8 pylint
-
-      - name: Run flake8
-        if: ${{ inputs.language == 'python' }}
-        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-
-      - name: Run pylint
-        if: ${{ inputs.language == 'python' }}
-        run: pylint app.py --errors-only
+          service_path: ${{ inputs.service_path }}
 
   security_scan:
     name: Security Scan (SCA + SAST)
     runs-on: ubuntu-latest
     needs: linter_static_analysis
-    defaults:
-      run:
-        working-directory: ${{ inputs.service_path }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Go
-        if: ${{ inputs.language == 'go' }}
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: ${{ inputs.service_path }}/go.mod
-          cache-dependency-path: ${{ inputs.service_path }}/go.sum
-
-      - name: Setup Python
-        if: ${{ inputs.language == 'python' }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
 
       - name: SCA - Trivy filesystem scan (block CRITICAL)
         uses: aquasecurity/trivy-action@0.24.0
@@ -151,21 +76,17 @@ jobs:
           ignore-unfixed: true
           exit-code: '1'
 
-      - name: SAST - gosec (block CRITICAL)
+      - name: SAST (Go)
         if: ${{ inputs.language == 'go' }}
-        run: |
-          go run github.com/securego/gosec/v2/cmd/gosec@v2.21.4 -severity high -confidence high ./...
+        uses: ./.github/actions/ci-go-sast
+        with:
+          service_path: ${{ inputs.service_path }}
 
-      - name: Install Python security tools
+      - name: SAST (Python)
         if: ${{ inputs.language == 'python' }}
-        run: |
-          pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          pip install bandit
-
-      - name: SAST - bandit (block high severity)
-        if: ${{ inputs.language == 'python' }}
-        run: bandit -r . -lll
+        uses: ./.github/actions/ci-python-sast
+        with:
+          service_path: ${{ inputs.service_path }}
 
   docker_build_and_push:
     name: Docker Build, Scan and Push

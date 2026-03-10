@@ -1,0 +1,26 @@
+name: CI Python SAST
+description: SAST checks for Python services
+inputs:
+  service_path:
+    description: Relative path to the service root
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Python security tools
+      shell: bash
+      working-directory: ${{ inputs.service_path }}
+      run: |
+        pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install bandit
+
+    - name: Run bandit (block high severity)
+      shell: bash
+      working-directory: ${{ inputs.service_path }}
+      run: bandit -r . -lll

@@ -4,7 +4,13 @@ Esta etapa adiciona pipelines de CI para os 5 microsserviços via GitHub Actions
 
 ## Workflows criados
 
-- `.github/workflows/template-ci.yml` (workflow reutilizável com os 4 estágios)
+- `.github/workflows/template-ci.yml` (workflow reutilizável com os 4 estágios comuns)
+- `.github/actions/ci-go-build/action.yml`
+- `.github/actions/ci-go-lint/action.yml`
+- `.github/actions/ci-go-sast/action.yml`
+- `.github/actions/ci-python-build/action.yml`
+- `.github/actions/ci-python-lint/action.yml`
+- `.github/actions/ci-python-sast/action.yml`
 - `.github/workflows/auth-service.yml`
 - `.github/workflows/flag-service.yml`
 - `.github/workflows/targeting-service.yml`
@@ -52,5 +58,3 @@ Isso é necessário para permitir OIDC no job de push para ECR do workflow reuti
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY`
 - `AWS_SESSION_TOKEN` (opcional; necessário em credenciais temporárias do AWS Academy)
-
-
