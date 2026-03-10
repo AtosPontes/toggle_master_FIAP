@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: app-evaluation-service
+  name: app-evaluation-service
+  namespace: evaluation-service
+spec:
+  strategy:
+    rollingUpdate:
+      maxSurge: 50%
+      maxUnavailable: 0
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-evaluation-service
+  template:
+    metadata:
+      labels:
+        app: app-evaluation-service
+    spec:
+      containers:
+        - name: app-evaluation-service 
+          image: 218593720598.dkr.ecr.us-east-1.amazonaws.com/togglemaster_evaluation-service:1.2.0
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8004
+            failureThreshold: 180   # 180 * 1s = 3 minutos
+            periodSeconds: 1
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8004
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8004
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          envFrom:
+            - secretRef:
+                name: evaluation-db-secret #Credentials to db login and generics
+            - secretRef:
+                name: evaluation-db-secret-host #Credential to db login (host)
+              
+              
