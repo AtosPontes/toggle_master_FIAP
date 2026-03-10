@@ -1,0 +1,26 @@
+name: CI Auth Service
+
+on:
+  pull_request:
+    paths:
+      - 'apps/local/1-auth-service/**'
+      - '.github/workflows/auth-service.yml'
+      - '.github/workflows/template-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/local/1-auth-service/**'
+      - '.github/workflows/auth-service.yml'
+      - '.github/workflows/template-ci.yml'
+
+jobs:
+  ci:
+    permissions:
+      contents: write
+      id-token: write
+    uses: ./.github/workflows/template-ci.yml
+    with:
+      service_name: auth-service
+      service_path: apps/local/1-auth-service
+      language: go
+      ecr_repository: togglemaster_auth-service

@@ -1,0 +1,26 @@
+name: CI Analytics Service
+
+on:
+  pull_request:
+    paths:
+      - 'apps/local/5-analytics-service/**'
+      - '.github/workflows/analytics-service.yml'
+      - '.github/workflows/template-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/local/5-analytics-service/**'
+      - '.github/workflows/analytics-service.yml'
+      - '.github/workflows/template-ci.yml'
+
+jobs:
+  ci:
+    permissions:
+      contents: write
+      id-token: write
+    uses: ./.github/workflows/template-ci.yml
+    with:
+      service_name: analytics-service
+      service_path: apps/local/5-analytics-service
+      language: python
+      ecr_repository: togglemaster_analytics-service

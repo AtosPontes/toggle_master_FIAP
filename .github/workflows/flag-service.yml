@@ -1,0 +1,26 @@
+name: CI Flag Service
+
+on:
+  pull_request:
+    paths:
+      - 'apps/local/2-flag-service/**'
+      - '.github/workflows/flag-service.yml'
+      - '.github/workflows/template-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/local/2-flag-service/**'
+      - '.github/workflows/flag-service.yml'
+      - '.github/workflows/template-ci.yml'
+
+jobs:
+  ci:
+    permissions:
+      contents: write
+      id-token: write
+    uses: ./.github/workflows/template-ci.yml
+    with:
+      service_name: flag-service
+      service_path: apps/local/2-flag-service
+      language: python
+      ecr_repository: togglemaster_flag-service

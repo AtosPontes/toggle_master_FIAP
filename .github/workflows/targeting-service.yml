@@ -1,0 +1,26 @@
+name: CI Targeting Service
+
+on:
+  pull_request:
+    paths:
+      - 'apps/local/3-targeting-service/**'
+      - '.github/workflows/targeting-service.yml'
+      - '.github/workflows/template-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/local/3-targeting-service/**'
+      - '.github/workflows/targeting-service.yml'
+      - '.github/workflows/template-ci.yml'
+
+jobs:
+  ci:
+    permissions:
+      contents: write
+      id-token: write
+    uses: ./.github/workflows/template-ci.yml
+    with:
+      service_name: targeting-service
+      service_path: apps/local/3-targeting-service
+      language: python
+      ecr_repository: togglemaster_targeting-service

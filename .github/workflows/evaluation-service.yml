@@ -1,0 +1,26 @@
+name: CI Evaluation Service
+
+on:
+  pull_request:
+    paths:
+      - 'apps/local/4-evaluation-service/**'
+      - '.github/workflows/evaluation-service.yml'
+      - '.github/workflows/template-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/local/4-evaluation-service/**'
+      - '.github/workflows/evaluation-service.yml'
+      - '.github/workflows/template-ci.yml'
+
+jobs:
+  ci:
+    permissions:
+      contents: write
+      id-token: write
+    uses: ./.github/workflows/template-ci.yml
+    with:
+      service_name: evaluation-service
+      service_path: apps/local/4-evaluation-service
+      language: go
+      ecr_repository: togglemaster_evaluation-service
