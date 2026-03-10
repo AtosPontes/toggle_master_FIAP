@@ -196,13 +196,81 @@ make test_all
 
 ---
 
-## Etapa C — CD & GitOps com ArgoCD
+## Etapa B — CI & DevSecOps
 
-- Os manifestos GitOps ficam em `gitops/`.
-- O ArgoCD é instalado via Terraform (módulo `modules/argocd`).
-- O CI atualiza automaticamente a imagem em `gitops/<service>/deployment.yaml` após push no ECR.
+Após a etapa de infraestrutura e execução inicial dos serviços, o projeto evolui para CI com pipelines por microsserviço no GitHub Actions.
 
-Para habilitar no Terraform:
+### Workflows e ações reutilizáveis
+
+- `.github/workflows/template-ci-go.yml` (template para serviços Go)
+- `.github/workflows/template-ci-python.yml` (template para serviços Python)
+- `.github/actions/ci-go-build/action.yml`
+- `.github/actions/ci-go-lint/action.yml`
+- `.github/actions/ci-go-sast/action.yml`
+- `.github/actions/ci-python-build/action.yml`
+- `.github/actions/ci-python-lint/action.yml`
+- `.github/actions/ci-python-sast/action.yml`
+- `.github/workflows/auth-service.yml`
+- `.github/workflows/flag-service.yml`
+- `.github/workflows/targeting-service.yml`
+- `.github/workflows/evaluation-service.yml`
+- `.github/workflows/analytics-service.yml`
+
+### Triggers dos pipelines
+
+Cada workflow de serviço roda em:
+
+- `workflow_dispatch`
+- `pull_request`
+- `push` na branch `main`
+
+Com `paths` por serviço para evitar execução desnecessária e com permissões explícitas:
+
+- `contents: write`
+
+### Estágios de CI implementados
+
+1. **Build & Unit Test**
+   - Go: `go test ./...`
+   - Python: `pytest` (quando há arquivos de teste)
+2. **Linter / Static Analysis**
+   - Go: `golangci-lint`
+   - Python: `flake8` e `pylint --errors-only`
+3. **Security Scan (SCA + SAST)**
+   - SCA: Trivy em filesystem com bloqueio de severidade `CRITICAL`
+   - SAST Go: gosec
+   - SAST Python: bandit
+4. **Docker Build, Scan and Push**
+   - Build da imagem
+   - Scan da imagem com Trivy (bloqueio `CRITICAL`)
+   - Push para ECR na `main`
+   - Atualização automática de `gitops/<service>/deployment.yaml`
+
+### Secrets necessários no GitHub
+
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_SESSION_TOKEN` (necessário quando as credenciais são temporárias)
+
+---
+
+## Etapa C — CD & GitOps (ArgoCD)
+
+### O que foi implementado
+
+1. **GitOps no monorepo**
+   - Manifestos em `gitops/` para os 5 microsserviços.
+2. **Instalação do ArgoCD via Terraform**
+   - Módulo `modules/argocd` instala o ArgoCD no namespace `argocd`.
+   - Criação de 5 `Application` (uma por microsserviço), com sync automático.
+3. **Atualização automática de imagem pelo CI**
+   - Após build/push da imagem no ECR, o CI atualiza:
+   - `gitops/<service>/deployment.yaml`
+   - Em seguida, realiza commit/push na `main` para o ArgoCD sincronizar.
+
+### Variáveis Terraform
+
+No `terraform.tfvars`, habilite:
 
 ```hcl
 enable_argocd          = true
@@ -210,4 +278,7 @@ gitops_repo_url        = "https://github.com/AtosPontes/projeto_posgraduacao.git
 gitops_target_revision = "main"
 ```
 
-Detalhes completos em `docs/ETAPA_C_CD_GITOPS.md`.
+### Observações operacionais
+
+- Os namespaces de aplicação continuam sendo criados pelo módulo Kubernetes.
+- Os jobs de inicialização de banco permanecem no fluxo operacional via `make`.

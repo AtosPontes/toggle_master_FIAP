@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: app-auth-service 
-          image: 903947067217.dkr.ecr.us-east-1.amazonaws.com/togglemaster_auth-service:1.2.0
+          image: 903947067217.dkr.ecr.us-east-1.amazonaws.com/togglemaster_auth-service:v1.0.0-c249f5a
           imagePullPolicy: Always
           resources:
             requests:
