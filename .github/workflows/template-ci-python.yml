@@ -138,7 +138,7 @@ jobs:
           fi
 
       - name: Push docker image to ECR
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
         env:
           REPOSITORY: ${{ inputs.ecr_repository }}
           IMAGE_TAG: ${{ steps.meta.outputs.tag }}
