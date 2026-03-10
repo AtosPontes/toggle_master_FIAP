@@ -9,9 +9,6 @@ on:
       service_path:
         required: true
         type: string
-      language:
-        required: true
-        type: string
       ecr_repository:
         required: true
         type: string
@@ -27,15 +24,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build & Unit Test (Go)
-        if: ${{ inputs.language == 'go' }}
+      - name: Build & Unit Test
         uses: ./.github/actions/ci-go-build
-        with:
-          service_path: ${{ inputs.service_path }}
-
-      - name: Build & Unit Test (Python)
-        if: ${{ inputs.language == 'python' }}
-        uses: ./.github/actions/ci-python-build
         with:
           service_path: ${{ inputs.service_path }}
 
@@ -47,15 +37,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Lint / Static Analysis (Go)
-        if: ${{ inputs.language == 'go' }}
+      - name: Lint / Static Analysis
         uses: ./.github/actions/ci-go-lint
-        with:
-          service_path: ${{ inputs.service_path }}
-
-      - name: Lint / Static Analysis (Python)
-        if: ${{ inputs.language == 'python' }}
-        uses: ./.github/actions/ci-python-lint
         with:
           service_path: ${{ inputs.service_path }}
 
@@ -76,15 +59,8 @@ jobs:
           ignore-unfixed: true
           exit-code: '1'
 
-      - name: SAST (Go)
-        if: ${{ inputs.language == 'go' }}
+      - name: SAST
         uses: ./.github/actions/ci-go-sast
-        with:
-          service_path: ${{ inputs.service_path }}
-
-      - name: SAST (Python)
-        if: ${{ inputs.language == 'python' }}
-        uses: ./.github/actions/ci-python-sast
         with:
           service_path: ${{ inputs.service_path }}
 
@@ -94,7 +70,6 @@ jobs:
     needs: security_scan
     permissions:
       contents: write
-      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -121,39 +96,20 @@ jobs:
           ignore-unfixed: true
           exit-code: '1'
 
-      - name: AWS auth mode
+      - name: Validate AWS credentials settings
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-        id: aws_auth_mode
         env:
-          AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
-          set -euo pipefail
-          if [ -n "${AWS_ROLE_TO_ASSUME:-}" ]; then
-            echo "mode=oidc" >> "$GITHUB_OUTPUT"
-          elif [ -n "${AWS_ACCESS_KEY_ID:-}" ] && [ -n "${AWS_SECRET_ACCESS_KEY:-}" ]; then
-            echo "mode=access_key" >> "$GITHUB_OUTPUT"
-          else
-            echo "mode=missing" >> "$GITHUB_OUTPUT"
+          if [ -z "${AWS_ACCESS_KEY_ID:-}" ] || [ -z "${AWS_SECRET_ACCESS_KEY:-}" ]; then
+            echo "Missing AWS credentials in GitHub Secrets."
+            echo "Set AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY."
+            exit 1
           fi
 
-      - name: Validate AWS credentials settings
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.aws_auth_mode.outputs.mode == 'missing' }}
-        run: |
-          echo "Missing AWS credentials in GitHub Secrets."
-          echo "Set AWS_ROLE_TO_ASSUME (OIDC) OR AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY."
-          exit 1
-
-      - name: Configure AWS credentials
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.aws_auth_mode.outputs.mode == 'oidc' }}
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: ${{ env.AWS_REGION }}
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-
       - name: Configure AWS credentials (Access Key)
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.aws_auth_mode.outputs.mode == 'access_key' }}
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
@@ -210,6 +166,6 @@ jobs:
           git add "${DEPLOYMENT_FILE}"
           git commit -m "chore(gitops): update ${{ inputs.service_name }} image to ${IMAGE_TAG}"
           git push origin HEAD:main || (
-            git pull --rebase origin main &&
+            git pull origin main &&
             git push origin HEAD:main
           )
