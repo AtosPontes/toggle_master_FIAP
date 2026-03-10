@@ -1,0 +1,24 @@
+name: CI Go Build
+description: Setup, dependencies and unit tests for Go services
+inputs:
+  service_path:
+    description: Relative path to the service root
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: ${{ inputs.service_path }}/go.mod
+        cache-dependency-path: ${{ inputs.service_path }}/go.sum
+
+    - name: Install Go dependencies
+      shell: bash
+      working-directory: ${{ inputs.service_path }}
+      run: go mod download
+
+    - name: Run Go tests
+      shell: bash
+      working-directory: ${{ inputs.service_path }}
+      run: go test ./...

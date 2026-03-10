@@ -6,12 +6,14 @@ on:
       - 'apps/local/3-targeting-service/**'
       - '.github/workflows/targeting-service.yml'
       - '.github/workflows/template-ci.yml'
+      - '.github/actions/**'
   push:
     branches: [main]
     paths:
       - 'apps/local/3-targeting-service/**'
       - '.github/workflows/targeting-service.yml'
       - '.github/workflows/template-ci.yml'
+      - '.github/actions/**'
 
 jobs:
   ci:

@@ -1,0 +1,26 @@
+name: CI Go Lint
+description: Static analysis for Go services
+inputs:
+  service_path:
+    description: Relative path to the service root
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: ${{ inputs.service_path }}/go.mod
+        cache-dependency-path: ${{ inputs.service_path }}/go.sum
+
+    - name: Install Go dependencies
+      shell: bash
+      working-directory: ${{ inputs.service_path }}
+      run: go mod download
+
+    - name: Run golangci-lint
+      uses: golangci/golangci-lint-action@v6
+      with:
+        version: latest
+        working-directory: ${{ inputs.service_path }}
+        args: --timeout=5m --issues-exit-code=0

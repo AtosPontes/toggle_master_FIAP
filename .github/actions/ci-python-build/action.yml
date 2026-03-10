@@ -1,0 +1,31 @@
+name: CI Python Build
+description: Setup, dependencies and unit tests for Python services
+inputs:
+  service_path:
+    description: Relative path to the service root
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Python dependencies
+      shell: bash
+      working-directory: ${{ inputs.service_path }}
+      run: |
+        pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install pytest
+
+    - name: Run Python tests (if available)
+      shell: bash
+      working-directory: ${{ inputs.service_path }}
+      run: |
+        if find . -type f \( -name 'test_*.py' -o -name '*_test.py' \) | grep -q .; then
+          pytest -q
+        else
+          echo "No Python unit tests found; skipping pytest."
+        fi

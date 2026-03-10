@@ -6,12 +6,14 @@ on:
       - 'apps/local/5-analytics-service/**'
       - '.github/workflows/analytics-service.yml'
       - '.github/workflows/template-ci.yml'
+      - '.github/actions/**'
   push:
     branches: [main]
     paths:
       - 'apps/local/5-analytics-service/**'
       - '.github/workflows/analytics-service.yml'
       - '.github/workflows/template-ci.yml'
+      - '.github/actions/**'
 
 jobs:
   ci:

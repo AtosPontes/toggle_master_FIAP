@@ -1,0 +1,20 @@
+name: CI Go SAST
+description: SAST checks for Go services
+inputs:
+  service_path:
+    description: Relative path to the service root
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: ${{ inputs.service_path }}/go.mod
+        cache-dependency-path: ${{ inputs.service_path }}/go.sum
+
+    - name: Run gosec (block high severity)
+      shell: bash
+      working-directory: ${{ inputs.service_path }}
+      run: |
+        go run github.com/securego/gosec/v2/cmd/gosec@v2.21.4 -severity high -confidence high ./...
