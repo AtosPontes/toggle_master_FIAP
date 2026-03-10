@@ -166,6 +166,6 @@ jobs:
           git add "${DEPLOYMENT_FILE}"
           git commit -m "chore(gitops): update ${{ inputs.service_name }} image to ${IMAGE_TAG}"
           git push origin HEAD:main || (
-            git pull --rebase origin main &&
+            git pull origin main &&
             git push origin HEAD:main
           )

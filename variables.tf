@@ -33,7 +33,7 @@ variable "enable_argocd" {
 variable "gitops_repo_url" {
   type        = string
   description = "Git repository URL with Kubernetes manifests for ArgoCD"
-  default     = "https://github.com/AtosPontes/projeto_posgraduacao.git"
+  default     = ""
 }
 
 variable "gitops_target_revision" {

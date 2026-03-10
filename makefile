@@ -2,11 +2,11 @@
 #Adicionando variáveis
 
 #Endpoint do ingress, é necessário adicionar para testar as aplicações (teste de integridade de todas aplicações)
-CLUSTER_ENDPOINT=af994ce1e1b7c468ea7b7afe98a6ec4e-1552892854.us-east-1.elb.amazonaws.com
+CLUSTER_ENDPOINT=a74846f24630343b98e0bd0d7a924f47-791760626.us-east-1.elb.amazonaws.com
 #Chave da API criada pelo auth-service, é necessário adicionar para testar as aplicações (teste das aplicações flag, targeting e evaluation)
-API_KEY=tm_key_e9b42a3af2e897e725cc26dcfb57c819f518b0e6dd8667abb89c98fad54bbed1
+API_KEY=tm_key_63ebf07925830ddc761194f856c61bd283664712228de6d05109172b5661d6f9
 #Account ID, é necessário adicionar para testar as aplicações (necessário). Pegar no console na parte superior direita.
-ACCOUNT_ID=218593720598
+ACCOUNT_ID=903947067217
 #-------------------------------------------------------------------------------
 
 

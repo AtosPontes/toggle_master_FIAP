@@ -161,11 +161,11 @@ jobs:
             exit 0
           fi
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "AtosPontes"
+          git config user.email "atos.pontes@icloud.com"
           git add "${DEPLOYMENT_FILE}"
           git commit -m "chore(gitops): update ${{ inputs.service_name }} image to ${IMAGE_TAG}"
           git push origin HEAD:main || (
-            git pull --rebase origin main &&
+            git pull origin main &&
             git push origin HEAD:main
           )
