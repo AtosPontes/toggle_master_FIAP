@@ -38,5 +38,4 @@ def test_flags_requires_authorization_header():
     response = client.get("/flags")
 
     assert response.status_code == 401
-    assert "Authorization header obrigatório" in response.get_data(as_text=True)
-
+    assert response.get_json()["error"] == "Authorization header obrigatório"

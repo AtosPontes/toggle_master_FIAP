@@ -13,4 +13,9 @@ override.tf.json
 # Local variable files (can contain secrets)
 terraform.tfvars
 *.auto.tfvars
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
 e/
