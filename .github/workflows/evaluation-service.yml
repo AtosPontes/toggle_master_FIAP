@@ -20,6 +20,7 @@ jobs:
   ci:
     permissions:
       contents: write
+    secrets: inherit
     uses: ./.github/workflows/template-ci-go.yml
     with:
       service_name: evaluation-service
