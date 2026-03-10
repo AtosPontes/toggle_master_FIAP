@@ -9,9 +9,6 @@ on:
       service_path:
         required: true
         type: string
-      language:
-        required: true
-        type: string
       ecr_repository:
         required: true
         type: string
@@ -27,15 +24,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build & Unit Test (Go)
-        if: ${{ inputs.language == 'go' }}
+      - name: Build & Unit Test
         uses: ./.github/actions/ci-go-build
-        with:
-          service_path: ${{ inputs.service_path }}
-
-      - name: Build & Unit Test (Python)
-        if: ${{ inputs.language == 'python' }}
-        uses: ./.github/actions/ci-python-build
         with:
           service_path: ${{ inputs.service_path }}
 
@@ -47,15 +37,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Lint / Static Analysis (Go)
-        if: ${{ inputs.language == 'go' }}
+      - name: Lint / Static Analysis
         uses: ./.github/actions/ci-go-lint
-        with:
-          service_path: ${{ inputs.service_path }}
-
-      - name: Lint / Static Analysis (Python)
-        if: ${{ inputs.language == 'python' }}
-        uses: ./.github/actions/ci-python-lint
         with:
           service_path: ${{ inputs.service_path }}
 
@@ -76,15 +59,8 @@ jobs:
           ignore-unfixed: true
           exit-code: '1'
 
-      - name: SAST (Go)
-        if: ${{ inputs.language == 'go' }}
+      - name: SAST
         uses: ./.github/actions/ci-go-sast
-        with:
-          service_path: ${{ inputs.service_path }}
-
-      - name: SAST (Python)
-        if: ${{ inputs.language == 'python' }}
-        uses: ./.github/actions/ci-python-sast
         with:
           service_path: ${{ inputs.service_path }}
 
