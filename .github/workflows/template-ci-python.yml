@@ -15,6 +15,7 @@ on:
 
 env:
   AWS_REGION: us-east-1
+  AWS_ACCOUNT_ID: "903947067217"
 
 jobs:
   build_and_unit_test:
@@ -122,25 +123,39 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Validate ECR account
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        env:
+          LOGGED_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          set -euo pipefail
+          EXPECTED_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          if [ "${LOGGED_REGISTRY}" != "${EXPECTED_REGISTRY}" ]; then
+            echo "Wrong AWS account for ECR login."
+            echo "Expected: ${EXPECTED_REGISTRY}"
+            echo "Received: ${LOGGED_REGISTRY}"
+            exit 1
+          fi
+
       - name: Push docker image to ECR
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         env:
-          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: ${{ inputs.ecr_repository }}
           IMAGE_TAG: ${{ steps.meta.outputs.tag }}
         run: |
+          REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
           docker tag ${{ inputs.service_name }}:${IMAGE_TAG} ${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}
           docker push ${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}
 
       - name: Update GitOps deployment image tag
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         env:
-          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: ${{ inputs.ecr_repository }}
           IMAGE_TAG: ${{ steps.meta.outputs.tag }}
           DEPLOYMENT_FILE: gitops/${{ inputs.service_name }}/deployment.yaml
         run: |
           set -euo pipefail
+          REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
           NEW_IMAGE="${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}"
           if [ ! -f "${DEPLOYMENT_FILE}" ]; then
             echo "GitOps file not found: ${DEPLOYMENT_FILE}"
