@@ -19,7 +19,7 @@ env:
 
 jobs:
   build_and_unit_test:
-    name: Build & Unit Test
+    name: Build & Unit Test 1
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

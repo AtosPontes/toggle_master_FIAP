@@ -196,7 +196,7 @@ make test_all
 
 ---
 
-## CI & DevSecOps
+## Etapa B — CI & DevSecOps
 
 Após a etapa de infraestrutura e execução inicial dos serviços, o projeto evolui para CI com pipelines por microsserviço no GitHub Actions.
 
@@ -254,7 +254,7 @@ Com `paths` por serviço para evitar execução desnecessária e com permissões
 
 ---
 
-## CD & GitOps (ArgoCD)
+## Etapa C — CD & GitOps (ArgoCD)
 
 ### O que foi implementado
 
