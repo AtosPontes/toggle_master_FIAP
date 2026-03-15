@@ -1,0 +1,134 @@
+data "aws_region" "current" {}
+
+resource "kubernetes_secret_v1" "auth_db_secret" {
+  depends_on = [kubernetes_namespace_v1.auth_service]
+
+  metadata {
+    name      = "auth-db-secret"
+    namespace = "auth-service"
+  }
+
+  data = {
+    POSTGRES_DB       = "auth_db"
+    POSTGRES_USER     = var.db_user
+    POSTGRES_PASSWORD = var.db_password
+    POSTGRES_PORT     = "5432"
+  }
+
+  type = "Opaque"
+}
+
+resource "kubernetes_secret_v1" "auth_db_secret_host" {
+  depends_on = [kubernetes_namespace_v1.auth_service]
+
+  metadata {
+    name      = "auth-db-secret-host"
+    namespace = "auth-service"
+  }
+
+  data = {
+    POSTGRES_HOST = var.db_auth_endpoint
+  }
+
+  type = "Opaque"
+}
+
+resource "kubernetes_secret_v1" "flag_db_secret" {
+  depends_on = [kubernetes_namespace_v1.flag_service]
+
+  metadata {
+    name      = "flag-db-secret"
+    namespace = "flag-service"
+  }
+
+  data = {
+    POSTGRES_DB       = "flag_db"
+    POSTGRES_USER     = var.db_user
+    POSTGRES_PASSWORD = var.db_password
+    POSTGRES_PORT     = "5432"
+  }
+
+  type = "Opaque"
+}
+
+resource "kubernetes_secret_v1" "flag_db_secret_host" {
+  depends_on = [kubernetes_namespace_v1.flag_service]
+
+  metadata {
+    name      = "flag-db-secret-host"
+    namespace = "flag-service"
+  }
+
+  data = {
+    POSTGRES_HOST = var.db_flag_endpoint
+  }
+
+  type = "Opaque"
+}
+
+resource "kubernetes_secret_v1" "targeting_db_secret" {
+  depends_on = [kubernetes_namespace_v1.targeting_service]
+
+  metadata {
+    name      = "targeting-db-secret"
+    namespace = "targeting-service"
+  }
+
+  data = {
+    POSTGRES_DB       = "targeting_db"
+    POSTGRES_USER     = var.db_user
+    POSTGRES_PASSWORD = var.db_password
+    POSTGRES_PORT     = "5432"
+  }
+
+  type = "Opaque"
+}
+
+resource "kubernetes_secret_v1" "targeting_db_secret_host" {
+  depends_on = [kubernetes_namespace_v1.targeting_service]
+
+  metadata {
+    name      = "targeting-db-secret-host"
+    namespace = "targeting-service"
+  }
+
+  data = {
+    POSTGRES_HOST = var.db_targeting_endpoint
+  }
+
+  type = "Opaque"
+}
+
+resource "kubernetes_secret_v1" "evaluation_db_secret_host" {
+  depends_on = [kubernetes_namespace_v1.evaluation_service]
+
+  metadata {
+    name      = "evaluation-db-secret-host"
+    namespace = "evaluation-service"
+  }
+
+  data = {
+    REDIS_URL   = "redis://${var.evaluation_db_endpoint}:6379"
+    AWS_REGION  = data.aws_region.current.id
+    AWS_SQS_URL = var.sqs_queue_url
+  }
+
+  type = "Opaque"
+}
+
+resource "kubernetes_secret_v1" "analytics_db_secret_host" {
+  depends_on = [kubernetes_namespace_v1.analytics_service]
+
+  metadata {
+    name      = "analytics-db-secret-host"
+    namespace = "analytics-service"
+  }
+
+  data = {
+    AWS_DYNAMODB_TABLE = var.dynamodb_url
+    AWS_REGION         = data.aws_region.current.id
+    AWS_SQS_URL        = var.sqs_queue_url
+  }
+
+  type = "Opaque"
+}

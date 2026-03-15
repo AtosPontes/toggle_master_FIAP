@@ -1,32 +1,29 @@
-#Adding kubernetes namespaces to all micro-services
+resource "kubernetes_namespace_v1" "auth_service" {
+  metadata {
+    name = "auth_service"
+  }
+}
 
-#auth-service namespace
-resource "kubernetes_namespace_v1" "auth-service" {
+resource "kubernetes_namespace_v1" "flag_service" {
   metadata {
-    name = "auth-service"
+    name = "flag_service"
   }
 }
-#flag-service namespace
-resource "kubernetes_namespace_v1" "flag-service" {
+
+resource "kubernetes_namespace_v1" "targeting_service" {
   metadata {
-    name = "flag-service"
+    name = "targeting_service"
   }
 }
-#targeting-service namespace
-resource "kubernetes_namespace_v1" "targeting-service" {
+
+resource "kubernetes_namespace_v1" "evaluation_service" {
   metadata {
-    name = "targeting-service"
+    name = "evaluation_service"
   }
 }
-#evaluation-service namespace
-resource "kubernetes_namespace_v1" "evaluation-service" {
+
+resource "kubernetes_namespace_v1" "analytics_service" {
   metadata {
-    name = "evaluation-service"
-  }
-}
-#analytics-service namespace
-resource "kubernetes_namespace_v1" "analytics-service" {
-  metadata {
-    name = "analytics-service"
+    name = "analytics_service"
   }
 }

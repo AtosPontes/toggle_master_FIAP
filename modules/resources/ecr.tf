@@ -10,7 +10,7 @@ resource "aws_ecr_repository" "main" {
 
   name                 = each.value # O nome vem da lista acima
   image_tag_mutability = "MUTABLE"
-
+  force_delete         = true
   image_scanning_configuration {
     scan_on_push = true
   }
