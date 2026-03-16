@@ -3,6 +3,10 @@ kind: ConfigMap
 metadata:
   name: db-auth-service-init-sql
   namespace: auth-service
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+    argocd.argoproj.io/sync-wave: "-2"  
 data:
   init.sql: |
     CREATE TABLE IF NOT EXISTS api_keys (
@@ -16,6 +20,6 @@ data:
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
 
-    INSERT INTO api_keys (key_value, active)
+    INSERT INTO api_keys (key_value, is_active)
     VALUES ('tm_key_1462791d24026b89bbc02f2f3072eda9bd7ed4c7e77c398ae9a5300d857f49c2', TRUE)
     ON CONFLICT (key_value) DO NOTHING;

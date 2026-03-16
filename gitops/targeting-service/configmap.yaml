@@ -3,6 +3,10 @@ kind: ConfigMap
 metadata:
   name: db-targeting-service-init-sql
   namespace: targeting-service
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+    argocd.argoproj.io/sync-wave: "-2"  
 data:
   init.sql: |
     CREATE TABLE IF NOT EXISTS targeting_rules (
@@ -40,6 +44,6 @@ data:
     FOR EACH ROW
     EXECUTE PROCEDURE trigger_set_timestamp();
 
-    INSERT INTO rules (flag_name, condition_type, condition_value)
-    VALUES ('enable-new-dashboard', 'percentage', '50')
+    INSERT INTO targeting_rules (flag_name, is_enabled, rules)
+    VALUES ('enable-new-dashboard', true, '{"type": "PERCENTAGE", "value": 50}')
     ON CONFLICT DO NOTHING;

@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - 'apps/local/3-targeting-service/**'
+      - 'gitops/targeting-service/**'
       - '.github/workflows/targeting-service.yml'
       - '.github/workflows/template-ci.yml'
       - '.github/actions/**'
@@ -12,6 +13,7 @@ on:
     branches: [main]
     paths:
       - 'apps/local/3-targeting-service/**'
+      - 'gitops/targeting-service/**'
       - '.github/workflows/targeting-service.yml'
       - '.github/workflows/template-ci.yml'
       - '.github/actions/**'
