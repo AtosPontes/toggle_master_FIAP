@@ -26,3 +26,4 @@ jobs:
       service_name: analytics-service
       service_path: apps/local/5-analytics-service
       ecr_repository: togglemaster_analytics-service
+      
