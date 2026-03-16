@@ -3,6 +3,10 @@ kind: ConfigMap
 metadata:
   name: db-flag-service-init-sql
   namespace: flag-service
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+    argocd.argoproj.io/sync-wave: "-2"  
 data:
   init.sql: |
     CREATE TABLE IF NOT EXISTS flags (
@@ -37,6 +41,6 @@ data:
     FOR EACH ROW
     EXECUTE PROCEDURE trigger_set_timestamp();
 
-    INSERT INTO flags (name, description, enabled)
+    INSERT INTO flags (name, description, is_enabled)
     VALUES ('enable-new-dashboard', 'Ativa o novo dashboard para usuários', true)
     ON CONFLICT (name) DO NOTHING;
