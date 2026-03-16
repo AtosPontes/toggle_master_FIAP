@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - 'apps/local/2-flag-service/**'
+      - 'gitops/flag-service/**'
       - '.github/workflows/flag-service.yml'
       - '.github/workflows/template-ci.yml'
       - '.github/actions/**'
@@ -12,6 +13,7 @@ on:
     branches: [main]
     paths:
       - 'apps/local/2-flag-service/**'
+      - 'gitops/flag-service/**'
       - '.github/workflows/flag-service.yml'
       - '.github/workflows/template-ci.yml'
       - '.github/actions/**'
