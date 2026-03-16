@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: app-analytics-service 
-          image: ${ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/togglemaster_analytics-service:1.0.0
+          image: 903947067217.dkr.ecr.us-east-1.amazonaws.com/togglemaster_analytics-service:v1.0.0-99643fa
           resources:
             requests:
               cpu: "250m"
