@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: app-evaluation-service 
-          image: ${ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/togglemaster_evaluation-service:1.0.0
+          image: 903947067217.dkr.ecr.us-east-1.amazonaws.com/togglemaster_evaluation-service:v1.0.0-53e7bc2
           resources:
             requests:
               cpu: "250m"
