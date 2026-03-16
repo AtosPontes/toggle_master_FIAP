@@ -1,29 +1,29 @@
 resource "kubernetes_namespace_v1" "auth_service" {
   metadata {
-    name = "auth_service"
+    name = "auth-service"
   }
 }
 
 resource "kubernetes_namespace_v1" "flag_service" {
   metadata {
-    name = "flag_service"
+    name = "flag-service"
   }
 }
 
 resource "kubernetes_namespace_v1" "targeting_service" {
   metadata {
-    name = "targeting_service"
+    name = "targeting-service"
   }
 }
 
 resource "kubernetes_namespace_v1" "evaluation_service" {
   metadata {
-    name = "evaluation_service"
+    name = "evaluation-service"
   }
 }
 
 resource "kubernetes_namespace_v1" "analytics_service" {
   metadata {
-    name = "analytics_service"
+    name = "analytics-service"
   }
 }

@@ -6,3 +6,4 @@ aws_account_id         = "123456789012"
 enable_argocd          = true
 gitops_repo_url        = "https://github.com/seu-usuario/seu-repo.git"
 gitops_target_revision = "main"
+service_api_key = ""

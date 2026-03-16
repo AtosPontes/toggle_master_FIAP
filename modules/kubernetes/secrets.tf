@@ -116,6 +116,22 @@ resource "kubernetes_secret_v1" "evaluation_db_secret_host" {
   type = "Opaque"
 }
 
+resource "kubernetes_secret_v1" "evaluation_db_secret" {
+  depends_on = [kubernetes_namespace_v1.evaluation_service]
+
+  metadata {
+    name      = "evaluation-db-secret"
+    namespace = "evaluation-service"
+  }
+
+  data = {
+    SERVICE_API_KEY = var.service_api_key
+    TARGETING_SERVICE_URL = "http://targeting-service.targeting-service.svc.cluster.local:8003"
+  }
+
+  type = "Opaque"
+}
+
 resource "kubernetes_secret_v1" "analytics_db_secret_host" {
   depends_on = [kubernetes_namespace_v1.analytics_service]
 
@@ -128,6 +144,21 @@ resource "kubernetes_secret_v1" "analytics_db_secret_host" {
     AWS_DYNAMODB_TABLE = var.dynamodb_url
     AWS_REGION         = data.aws_region.current.id
     AWS_SQS_URL        = var.sqs_queue_url
+  }
+
+  type = "Opaque"
+}
+
+resource "kubernetes_secret_v1" "analytics_db_secret" {
+  depends_on = [kubernetes_namespace_v1.analytics_service]
+
+  metadata {
+    name      = "analytics-db-secret"
+    namespace = "analytics-service"
+  }
+
+  data = {
+    SERVICE_API_KEY = var.service_api_key
   }
 
   type = "Opaque"

@@ -42,3 +42,9 @@ variable "gitops_target_revision" {
   description = "Git revision/branch monitored by ArgoCD"
   default     = "main"
 }
+
+variable "service_api_key" {
+  type        = string
+  description = "Internal service API key"
+  sensitive   = true
+}

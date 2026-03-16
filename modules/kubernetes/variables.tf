@@ -48,3 +48,9 @@ variable "dynamodb_url" {
   type        = string
   description = "DynamoDB table name"
 }
+
+variable "service_api_key" {
+  type        = string
+  description = "Service API key used by internal services"
+  sensitive   = true
+}
