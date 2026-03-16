@@ -17,6 +17,7 @@ variable "db_user" {
 variable "db_password" {
   type        = string
   description = "Password to RDS"
+  sensitive   = true
 }
 
 variable "aws_account_id" {
@@ -27,7 +28,7 @@ variable "aws_account_id" {
 variable "enable_argocd" {
   type        = bool
   description = "Enable ArgoCD installation and GitOps Applications"
-  default     = false
+  default     = true
 }
 
 variable "gitops_repo_url" {
@@ -40,4 +41,10 @@ variable "gitops_target_revision" {
   type        = string
   description = "Git revision/branch monitored by ArgoCD"
   default     = "main"
+}
+
+variable "service_api_key" {
+  type        = string
+  description = "Internal service API key"
+  sensitive   = true
 }

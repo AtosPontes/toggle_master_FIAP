@@ -1,76 +1,56 @@
-# Variable for the VPC to be used for the RDS
 variable "project_name" {
   type        = string
-  description = "Project name to be used to name the resources (name tag)"
+  description = "Project name"
 }
 
 variable "tags" {
   type        = map(any)
-  description = "Tags to be added to AWS resources"
+  description = "Tags to be added to resources"
 }
 
 variable "db_user" {
   type        = string
-  description = "User to RDS Postgres"
+  description = "RDS Postgres user"
 }
 
 variable "db_password" {
   type        = string
-  description = "Password to RDS Postgres"
+  description = "RDS Postgres password"
+  sensitive   = true
 }
 
 variable "db_auth_endpoint" {
   type        = string
-  description = "Host endpoint to RDS Postgres"
+  description = "Auth DB endpoint"
 }
-
-#variable "db_auth_name" {
-#  type        = string
-#  description = "Password to RDS Postgres"
-#}
 
 variable "db_flag_endpoint" {
   type        = string
-  description = "Host endpoint to RDS Postgres"
+  description = "Flag DB endpoint"
 }
-
-#variable "db_flag_name" {
-#  type        = string
-#  description = "Password to RDS Postgres"
-#}
 
 variable "db_targeting_endpoint" {
   type        = string
-  description = "Host endpoint to RDS Postgres"
+  description = "Targeting DB endpoint"
 }
-
-#variable "db_targeting_name" {
-#  type        = string
-#  description = "Password to RDS Postgres"
-#}
 
 variable "evaluation_db_endpoint" {
   type        = string
-  description = "User to Redis"
+  description = "Redis endpoint"
 }
 
 variable "sqs_queue_url" {
   type        = string
-  description = "SQS Queue"
+  description = "SQS queue URL"
 }
 
 variable "dynamodb_url" {
   type        = string
-  description = "Dynamodb url"
+  description = "DynamoDB table name"
 }
 
-
-
-
-
-
-
-
-
-
-
+variable "service_api_key" {
+  type        = string
+  description = "Service API key used by internal services"
+  sensitive   = true
+}

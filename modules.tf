@@ -49,6 +49,7 @@ module "kubernetes" {
   evaluation_db_endpoint = module.resources.evaluation_db_endpoint
   sqs_queue_url          = module.resources.sqs_queue_url
   dynamodb_url           = module.resources.dynamodb_url
+  service_api_key        = var.service_api_key
   depends_on             = [module.eks_cluster, module.eks_mng]
 }
 
