@@ -9,13 +9,59 @@ resource "helm_release" "argocd" {
   set = [
     {
       name  = "server.service.type"
-      value = "LoadBalancer"
+      value = "ClusterIP"
     },
     {
       name  = "configs.params.server\\.insecure"
       value = "true"
+    },
+    {
+      name  = "configs.params.server\\.basehref"
+      value = "/argocd"
+    },
+    {
+      name  = "configs.params.server\\.rootpath"
+      value = "/argocd"
+    },
+    {
+      name  = "server.ingress.enabled"
+      value = "false"
     }
   ]
+}
+
+resource "kubernetes_ingress_v1" "argocd_server" {
+  metadata {
+    name      = "argocd-server"
+    namespace = "argocd"
+    annotations = {
+      "nginx.ingress.kubernetes.io/backend-protocol" = "HTTP"
+    }
+  }
+
+  spec {
+    ingress_class_name = "nginx"
+
+    rule {
+      http {
+        path {
+          path      = "/argocd"
+          path_type = "Prefix"
+
+          backend {
+            service {
+              name = "argocd-server"
+              port {
+                number = 80
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  depends_on = [helm_release.argocd]
 }
 
 locals {
@@ -132,33 +178,11 @@ locals {
     }
   }
 
-  applications = merge(
-    {
-      "platform" = {
-        namespace = "argocd"
-        project   = "default"
-        source = {
-          repoURL        = var.gitops_repo_url
-          targetRevision = var.gitops_revision
-          path           = "gitops/platform"
-        }
-        destination = {
-          server    = "https://kubernetes.default.svc"
-          namespace = "default"
-        }
-        syncPolicy = {
-          automated = {
-            prune    = true
-            selfHeal = true
-          }
-        }
-      }
-    },
-    var.enable_workloads ? local.workload_applications : {}
-  )
+  applications = var.enable_workloads ? local.workload_applications : {}
 }
 
 resource "helm_release" "argocd_apps" {
+  count      = var.enable_workloads ? 1 : 0
   name       = "argocd-apps"
   repository = "https://argoproj.github.io/argo-helm"
   chart      = "argocd-apps"

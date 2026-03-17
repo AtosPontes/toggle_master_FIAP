@@ -2,11 +2,13 @@
 #Adicionando variáveis
 
 #Endpoint do ingress, é necessário adicionar para testar as aplicações (teste de integridade de todas aplicações)
-CLUSTER_ENDPOINT=a74846f24630343b98e0bd0d7a924f47-791760626.us-east-1.elb.amazonaws.com
+CLUSTER_ENDPOINT=a5defb2e069824788bf2533a8f327fa6-1341482962.us-east-1.elb.amazonaws.com
 #Chave da API criada pelo auth-service, é necessário adicionar para testar as aplicações (teste das aplicações flag, targeting e evaluation)
-API_KEY=tm_key_63ebf07925830ddc761194f856c61bd283664712228de6d05109172b5661d6f9
+API_KEY=tm_key_8f4c1b9d2e7a6c5f0d3a1e9b7c4f2a8d6e1c3b5a7f9d2c4e6b8a0d1f3c5e7a9
 #Account ID, é necessário adicionar para testar as aplicações (necessário). Pegar no console na parte superior direita.
 ACCOUNT_ID=903947067217
+
+API_KEY_MASTER=tm_master_4b7d9f2c6a1e8d3f5b0c7a9e2d4f6c1b8a3e5d7f9c2a4b6
 #-------------------------------------------------------------------------------
 
 
@@ -107,7 +109,7 @@ test_1:
 
 #Criando o API_KEY - Nessa parte, terá um output sinalizando qual é a API KEY. Pegue e adicione como variável em API_KEY
 init_2.1:
-	curl -X POST http://$(CLUSTER_ENDPOINT)/auth-service/admin/keys -H "Content-Type: application/json" -H "Authorization: Bearer admin-secreto-123" -d '{"name": "admin-para-flag-service"}'
+	curl -X POST http://$(CLUSTER_ENDPOINT)/auth-service/admin/keys -H "Content-Type: application/json" -H "Authorization: Bearer $(API_KEY_MASTER)" -d '{"name": "admin-para-flag-service"}'
 
 init_2.2:
 #Criando a FLAG	- Para realizar esse passo é necessário ter setado a API_KEY
