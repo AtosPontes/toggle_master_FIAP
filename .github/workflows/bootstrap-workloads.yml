@@ -9,6 +9,9 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Bootstrap auth-service image
         uses: ./.github/actions/ci-go-service
         with:
@@ -25,6 +28,9 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Bootstrap flag-service image
         uses: ./.github/actions/ci-python-service
         with:
@@ -41,6 +47,9 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Bootstrap targeting-service image
         uses: ./.github/actions/ci-python-service
         with:
@@ -57,6 +66,9 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Bootstrap evaluation-service image
         uses: ./.github/actions/ci-go-service
         with:
@@ -73,6 +85,9 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Bootstrap analytics-service image
         uses: ./.github/actions/ci-python-service
         with:

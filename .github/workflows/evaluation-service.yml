@@ -21,6 +21,9 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Run evaluation-service pipeline
         uses: ./.github/actions/ci-go-service
         with:
