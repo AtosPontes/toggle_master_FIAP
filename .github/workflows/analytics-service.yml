@@ -12,6 +12,7 @@ on:
     branches: [main]
     paths:
       - 'apps/local/5-analytics-service/**'
+      - 'gitops/analytics-service/**'
       - '.github/workflows/analytics-service.yml'
       - '.github/actions/**'
 
