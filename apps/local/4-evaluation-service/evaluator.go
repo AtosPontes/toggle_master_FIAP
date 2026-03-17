@@ -94,8 +94,12 @@ func (a *App) fetchFromServices(flagName string) (*CombinedFlagInfo, error) {
 	if flagErr != nil {
 		return nil, flagErr // Se a flag não existe, não podemos fazer nada
 	}
-	// Se a regra não existir, não é um erro fatal. Usaremos um 'nil'
+	// Se a regra não existir, não é um erro fatal. Usaremos um 'nil'.
+	// Outros erros devem falhar a avaliação para evitar decisões incorretas.
 	if ruleErr != nil {
+		if _, ok := ruleErr.(*NotFoundError); !ok {
+			return nil, ruleErr
+		}
 		log.Printf("Aviso: Nenhuma regra de segmentação encontrada para '%s'. Usando padrão.", flagName)
 	}
 

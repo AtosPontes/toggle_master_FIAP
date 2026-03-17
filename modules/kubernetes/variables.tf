@@ -19,6 +19,12 @@ variable "db_password" {
   sensitive   = true
 }
 
+variable "master_key" {
+  type        = string
+  description = "Master key used by auth-service"
+  sensitive   = true
+}
+
 variable "db_auth_endpoint" {
   type        = string
   description = "Auth DB endpoint"

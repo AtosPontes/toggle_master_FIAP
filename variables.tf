@@ -20,6 +20,12 @@ variable "db_password" {
   sensitive   = true
 }
 
+variable "master_key" {
+  type        = string
+  description = "Master key used by auth-service to create API keys"
+  sensitive   = true
+}
+
 variable "aws_account_id" {
   type        = string
   description = "AWS account ID used in ARNs and ECR registry URLs"
@@ -29,6 +35,12 @@ variable "enable_argocd" {
   type        = bool
   description = "Enable ArgoCD installation and GitOps Applications"
   default     = true
+}
+
+variable "enable_workloads" {
+  type        = bool
+  description = "Enable ArgoCD applications for the five workloads after the initial image bootstrap"
+  default     = false
 }
 
 variable "gitops_repo_url" {

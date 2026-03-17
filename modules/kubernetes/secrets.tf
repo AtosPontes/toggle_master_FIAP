@@ -13,6 +13,8 @@ resource "kubernetes_secret_v1" "auth_db_secret" {
     POSTGRES_USER     = var.db_user
     POSTGRES_PASSWORD = var.db_password
     POSTGRES_PORT     = "5432"
+    MASTER_KEY        = var.master_key
+    SERVICE_API_KEY   = var.service_api_key
   }
 
   type = "Opaque"
@@ -42,6 +44,7 @@ resource "kubernetes_secret_v1" "flag_db_secret" {
   }
 
   data = {
+    AUTH_SERVICE_URL  = "http://app-auth-service.auth-service.svc.cluster.local:8001"
     POSTGRES_DB       = "flag_db"
     POSTGRES_USER     = var.db_user
     POSTGRES_PASSWORD = var.db_password
@@ -75,6 +78,7 @@ resource "kubernetes_secret_v1" "targeting_db_secret" {
   }
 
   data = {
+    AUTH_SERVICE_URL  = "http://app-auth-service.auth-service.svc.cluster.local:8001"
     POSTGRES_DB       = "targeting_db"
     POSTGRES_USER     = var.db_user
     POSTGRES_PASSWORD = var.db_password
@@ -125,8 +129,9 @@ resource "kubernetes_secret_v1" "evaluation_db_secret" {
   }
 
   data = {
-    SERVICE_API_KEY = var.service_api_key
-    TARGETING_SERVICE_URL = "http://targeting-service.targeting-service.svc.cluster.local:8003"
+    FLAG_SERVICE_URL      = "http://app-flag-service.flag-service.svc.cluster.local:8002"
+    SERVICE_API_KEY       = var.service_api_key
+    TARGETING_SERVICE_URL = "http://app-targeting-service.targeting-service.svc.cluster.local:8003"
   }
 
   type = "Opaque"

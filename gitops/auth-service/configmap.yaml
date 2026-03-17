@@ -19,7 +19,3 @@ data:
         is_active BOOLEAN DEFAULT true,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
-
-    INSERT INTO api_keys (key_value, is_active)
-    VALUES ('tm_key_1462791d24026b89bbc02f2f3072eda9bd7ed4c7e77c398ae9a5300d857f49c2', TRUE)
-    ON CONFLICT (key_value) DO NOTHING;

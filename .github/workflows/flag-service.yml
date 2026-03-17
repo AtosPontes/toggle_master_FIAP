@@ -7,15 +7,14 @@ on:
       - 'apps/local/2-flag-service/**'
       - 'gitops/flag-service/**'
       - '.github/workflows/flag-service.yml'
-      - '.github/workflows/template-ci.yml'
+      - '.github/workflows/template-ci-python.yml'
       - '.github/actions/**'
   push:
     branches: [main]
     paths:
       - 'apps/local/2-flag-service/**'
-      - 'gitops/flag-service/**'
       - '.github/workflows/flag-service.yml'
-      - '.github/workflows/template-ci.yml'
+      - '.github/workflows/template-ci-python.yml'
       - '.github/actions/**'
 
 jobs:

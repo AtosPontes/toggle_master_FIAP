@@ -43,6 +43,7 @@ module "kubernetes" {
   tags                   = local.tags
   db_user                = var.db_user
   db_password            = var.db_password
+  master_key             = var.master_key
   db_auth_endpoint       = module.resources.db_auth_endpoint
   db_flag_endpoint       = module.resources.db_flag_endpoint
   db_targeting_endpoint  = module.resources.db_targeting_endpoint
@@ -54,9 +55,10 @@ module "kubernetes" {
 }
 
 module "argocd" {
-  count           = var.enable_argocd ? 1 : 0
-  source          = "./modules/argocd"
-  gitops_repo_url = var.gitops_repo_url
-  gitops_revision = var.gitops_target_revision
-  depends_on      = [module.eks_cluster, module.eks_mng, module.kubernetes]
+  count            = var.enable_argocd ? 1 : 0
+  source           = "./modules/argocd"
+  enable_workloads = var.enable_workloads
+  gitops_repo_url  = var.gitops_repo_url
+  gitops_revision  = var.gitops_target_revision
+  depends_on       = [module.eks_cluster, module.eks_mng, module.kubernetes]
 }

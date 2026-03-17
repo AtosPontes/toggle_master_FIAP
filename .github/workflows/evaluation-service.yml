@@ -7,15 +7,14 @@ on:
       - 'apps/local/4-evaluation-service/**'
       - 'gitops/evaluation-service/**'
       - '.github/workflows/evaluation-service.yml'
-      - '.github/workflows/template-ci.yml'
+      - '.github/workflows/template-ci-go.yml'
       - '.github/actions/**'
   push:
     branches: [main]
     paths:
       - 'apps/local/4-evaluation-service/**'
-      - 'gitops/evaluation-service/**'
       - '.github/workflows/evaluation-service.yml'
-      - '.github/workflows/template-ci.yml'
+      - '.github/workflows/template-ci-go.yml'
       - '.github/actions/**'
 
 jobs:

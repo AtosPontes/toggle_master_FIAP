@@ -7,15 +7,14 @@ on:
       - 'apps/local/3-targeting-service/**'
       - 'gitops/targeting-service/**'
       - '.github/workflows/targeting-service.yml'
-      - '.github/workflows/template-ci.yml'
+      - '.github/workflows/template-ci-python.yml'
       - '.github/actions/**'
   push:
     branches: [main]
     paths:
       - 'apps/local/3-targeting-service/**'
-      - 'gitops/targeting-service/**'
       - '.github/workflows/targeting-service.yml'
-      - '.github/workflows/template-ci.yml'
+      - '.github/workflows/template-ci-python.yml'
       - '.github/actions/**'
 
 jobs:
