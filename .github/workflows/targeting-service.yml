@@ -7,24 +7,26 @@ on:
       - 'apps/local/3-targeting-service/**'
       - 'gitops/targeting-service/**'
       - '.github/workflows/targeting-service.yml'
-      - '.github/workflows/template-ci.yml'
       - '.github/actions/**'
   push:
     branches: [main]
     paths:
       - 'apps/local/3-targeting-service/**'
-      - 'gitops/targeting-service/**'
       - '.github/workflows/targeting-service.yml'
-      - '.github/workflows/template-ci.yml'
       - '.github/actions/**'
 
 jobs:
   ci:
+    runs-on: ubuntu-latest
     permissions:
       contents: write
-    secrets: inherit
-    uses: ./.github/workflows/template-ci-python.yml
-    with:
-      service_name: targeting-service
-      service_path: apps/local/3-targeting-service
-      ecr_repository: togglemaster_targeting-service
+    steps:
+      - name: Run targeting-service pipeline
+        uses: ./.github/actions/ci-python-service
+        with:
+          service_name: targeting-service
+          service_path: apps/local/3-targeting-service
+          ecr_repository: togglemaster_targeting-service
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}

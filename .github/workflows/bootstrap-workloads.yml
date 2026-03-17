@@ -1,0 +1,84 @@
+name: Bootstrap Workloads
+
+on:
+  workflow_dispatch:
+
+jobs:
+  auth:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Bootstrap auth-service image
+        uses: ./.github/actions/ci-go-service
+        with:
+          service_name: auth-service
+          service_path: apps/local/1-auth-service
+          ecr_repository: togglemaster_auth-service
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
+
+  flag:
+    needs: auth
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Bootstrap flag-service image
+        uses: ./.github/actions/ci-python-service
+        with:
+          service_name: flag-service
+          service_path: apps/local/2-flag-service
+          ecr_repository: togglemaster_flag-service
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
+
+  targeting:
+    needs: flag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Bootstrap targeting-service image
+        uses: ./.github/actions/ci-python-service
+        with:
+          service_name: targeting-service
+          service_path: apps/local/3-targeting-service
+          ecr_repository: togglemaster_targeting-service
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
+
+  evaluation:
+    needs: targeting
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Bootstrap evaluation-service image
+        uses: ./.github/actions/ci-go-service
+        with:
+          service_name: evaluation-service
+          service_path: apps/local/4-evaluation-service
+          ecr_repository: togglemaster_evaluation-service
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
+
+  analytics:
+    needs: evaluation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Bootstrap analytics-service image
+        uses: ./.github/actions/ci-python-service
+        with:
+          service_name: analytics-service
+          service_path: apps/local/5-analytics-service
+          ecr_repository: togglemaster_analytics-service
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}

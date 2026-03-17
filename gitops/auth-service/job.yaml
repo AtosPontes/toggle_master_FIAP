@@ -34,6 +34,18 @@ spec:
                 -d "$POSTGRES_DB" \
                 -v ON_ERROR_STOP=1 \
                 -f /sql/init.sql
+
+              SERVICE_API_KEY_HASH="$(printf '%s' "$SERVICE_API_KEY" | sha256sum | awk '{print $1}')"
+
+              echo "Seeding internal service API key..."
+              PGPASSWORD="$POSTGRES_PASSWORD" psql \
+                -h "$POSTGRES_HOST" \
+                -p "$POSTGRES_PORT" \
+                -U "$POSTGRES_USER" \
+                -d "$POSTGRES_DB" \
+                -v ON_ERROR_STOP=1 \
+                -c "INSERT INTO api_keys (name, key_hash) VALUES ('internal-service', '${SERVICE_API_KEY_HASH}') ON CONFLICT (key_hash) DO NOTHING;"
+
               echo "Table created successfully"
               echo "--------"
               echo "Checking tables..."

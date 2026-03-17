@@ -19,7 +19,7 @@ resource "helm_release" "argocd" {
 }
 
 locals {
-  applications = {
+  workload_applications = {
     "auth-service" = {
       namespace = "argocd"
       project   = "default"
@@ -131,6 +131,31 @@ locals {
       }
     }
   }
+
+  applications = merge(
+    {
+      "platform" = {
+        namespace = "argocd"
+        project   = "default"
+        source = {
+          repoURL        = var.gitops_repo_url
+          targetRevision = var.gitops_revision
+          path           = "gitops/platform"
+        }
+        destination = {
+          server    = "https://kubernetes.default.svc"
+          namespace = "default"
+        }
+        syncPolicy = {
+          automated = {
+            prune    = true
+            selfHeal = true
+          }
+        }
+      }
+    },
+    var.enable_workloads ? local.workload_applications : {}
+  )
 }
 
 resource "helm_release" "argocd_apps" {
