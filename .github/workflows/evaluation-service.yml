@@ -12,6 +12,7 @@ on:
     branches: [main]
     paths:
       - 'apps/local/4-evaluation-service/**'
+      - 'gitops/evaluation-service/**'
       - '.github/workflows/evaluation-service.yml'
       - '.github/actions/**'
 

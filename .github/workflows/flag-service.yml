@@ -12,6 +12,7 @@ on:
     branches: [main]
     paths:
       - 'apps/local/2-flag-service/**'
+      - 'gitops/flag-service/**'
       - '.github/workflows/flag-service.yml'
       - '.github/actions/**'
 

@@ -12,6 +12,7 @@ on:
     branches: [main]
     paths:
       - 'apps/local/1-auth-service/**'
+      - 'gitops/auth-service/**'
       - '.github/workflows/auth-service.yml'
       - '.github/actions/**'
 
