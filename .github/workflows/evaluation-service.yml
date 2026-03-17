@@ -7,30 +7,23 @@ on:
       - 'apps/local/4-evaluation-service/**'
       - 'gitops/evaluation-service/**'
       - '.github/workflows/evaluation-service.yml'
+      - '.github/workflows/template-ci-go.yml'
       - '.github/actions/**'
   push:
     branches: [main]
     paths:
       - 'apps/local/4-evaluation-service/**'
-      - 'gitops/evaluation-service/**'
       - '.github/workflows/evaluation-service.yml'
+      - '.github/workflows/template-ci-go.yml'
       - '.github/actions/**'
 
 jobs:
   ci:
-    runs-on: ubuntu-latest
     permissions:
       contents: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Run evaluation-service pipeline
-        uses: ./.github/actions/ci-go-service
-        with:
-          service_name: evaluation-service
-          service_path: apps/local/4-evaluation-service
-          ecr_repository: togglemaster_evaluation-service
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
+    secrets: inherit
+    uses: ./.github/workflows/template-ci-go.yml
+    with:
+      service_name: evaluation-service
+      service_path: apps/local/4-evaluation-service
+      ecr_repository: togglemaster_evaluation-service
