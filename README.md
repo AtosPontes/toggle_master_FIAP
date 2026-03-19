@@ -1,13 +1,13 @@
-# Projeto Togglemaster fase 2
+# Projeto Togglemaster fase 3
 
 ### Visão Geral do Projeto
 
 Este projeto foi desenvolvido como parte do **desafio bimestral da PósTech FIAP**.
 
-A solução utiliza uma **aplicação local fornecida pela FIAP**, cujas imagens foram configuradas e versionadas com **Docker**, publicadas em um repositório remoto **Amazon ECR** e posteriormente **deployadas em um cluster Kubernetes**.
+A solução utiliza uma **aplicação local fornecida pela FIAP**, cujas imagens são geradas por pipelines no **GitHub Actions**, publicadas em repositórios **Amazon ECR** e posteriormente **deployadas em um cluster Kubernetes (EKS)** por meio de **GitOps com ArgoCD**.
 
 Todo o cluster Kubernetes, bem como a infraestrutura associada, foi **provisionado via Terraform**, garantindo uma infraestrutura totalmente **automatizada, documentada, versionada no GitHub e reproduzível**.  
-Ainda por meio do Terraform, foram realizadas **provisões iniciais de recursos Kubernetes**, incluindo a criação de alguns **Jobs** necessários para o funcionamento do ambiente.
+Além da infraestrutura base, o Terraform também instala recursos da camada Kubernetes, incluindo **Ingress NGINX**, **ArgoCD**, namespaces e secrets iniciais necessários para o fluxo da **Fase 3**.
 
 ---
 
@@ -74,121 +74,107 @@ Funciona como um **worker de backend**, não possuindo API pública (exceto o en
 > **Importante:**  
 > Todos os comandos a seguir devem ser executados **na raiz do projeto**.
 
-### 1. Aplicar a infraestrutura com Terraform
+### 0. Criar previamente o bucket do backend Terraform
 
-Provisiona toda a infraestrutura necessária do projeto.
+Antes de executar o projeto, é necessário criar manualmente o bucket S3 usado pelo backend remoto do Terraform.
 
-```bash
-make terraform_apply
-```
+Configuração atual do backend:
 
+- `bucket = "toggle-master-tfstate"`
+- `key = "dev/terraform.tfstate"`
+- `region = "us-east-1"`
 
-### 2. Build das imagens e envio para o Amazon ECR
-
-Realiza o build das imagens Docker das aplicações e envia para o **Amazon ECR**.
-
-> **Dependência:**  
-> Preencher a variável `ACCOUNT_ID`.
+Exemplo de criação:
 
 ```bash
-make docker_build
+aws s3api create-bucket \
+  --bucket toggle-master-tfstate \
+  --region us-east-1
 ```
 
+Se o bucket não existir, o `terraform init` e os comandos de `terraform apply` não irão funcionar.
 
-### 3. Subir as aplicações iniciais (Auth - Flag - Targeting)
+### 1. Preparar as variáveis do Terraform
+
+Preencha o arquivo `terraform.tfvars` com os valores obrigatórios, incluindo:
+
+- `aws_account_id`
+- `db_user`
+- `db_password`
+- `master_key`
+- `service_api_key`
+- `gitops_repo_url`
+
+Além disso, habilite o ArgoCD e deixe as workloads desabilitadas no primeiro bootstrap:
+
+```hcl
+enable_argocd    = true
+enable_workloads = false
+```
+
+### 2. Aplicar a infraestrutura base
+
+O primeiro `apply` cria a infraestrutura AWS, instala o **Ingress NGINX**, instala o **ArgoCD** e prepara o cluster para o fluxo GitOps, mas ainda **não cria as 5 Applications** dos microsserviços.
 
 ```bash
-make k8s_up
+make terraform_apply_bootstrap
 ```
 
-Agora pegue o endpoint do cluster que foi gerado no passo anterior com o comando "kubectl get svc -Aowide" (linha do LOADBALANCER). Preencha a variável CLUSTER_ENDPOINT com este endpoint.
+### 3. Publicar as primeiras imagens das aplicações
 
----
+Após o bootstrap da infraestrutura, publique a primeira imagem de cada microsserviço no ECR.
+Isso pode ser feito de duas formas:
 
-> **Atenção:**  
-> APENAS SIGA OS PRÓXIMOS PASSOS COM AS PARTES ACIMA CONFIGURADAS.
+- executando o workflow manual `Bootstrap Workloads`
+- ou realizando merge na `main` dos microsserviços para disparar as pipelines individuais
 
-### 4. Testar se as aplicações subiram normalmente
+### 4. Habilitar as workloads no ArgoCD
 
-Verifica se os serviços iniciais estão respondendo corretamente.
-
-> **Dependência:**  
-> Variável `CLUSTER_ENDPOINT` configurada.
+Depois que as imagens já existirem no ECR, execute o segundo `apply` para criar as `Applications` dos microsserviços no ArgoCD:
 
 ```bash
-make test_1
+make terraform_apply_workloads
 ```
 
-### 5. Gerar a API Key
+Nesse momento o ArgoCD passa a sincronizar:
 
-Realiza a geração da chave de API utilizada para autenticação entre os serviços.
+- `auth-service`
+- `flag-service`
+- `targeting-service`
+- `evaluation-service`
+- `analytics-service`
 
-> **Dependência:**  
-> Variável `CLUSTER_ENDPOINT` configurada.
+### 5. Validar o ambiente
+
+Após o segundo `apply`, o acesso externo acontece por um único **LoadBalancer** do `ingress-nginx`.
+
+Exemplos de acesso:
+
+- `http://<LOADBALANCER>/auth-service`
+- `http://<LOADBALANCER>/flag-service`
+- `http://<LOADBALANCER>/targeting-service`
+- `http://<LOADBALANCER>/evaluation-service`
+- `http://<LOADBALANCER>/analytics-service`
+- `http://<LOADBALANCER>/argocd`
+
+Para descobrir o endpoint do balanceador:
+
+```bash
+kubectl get svc -A
+kubectl get ingress -A
+```
+
+### 6. Inicializar os dados funcionais da aplicação
+
+Depois que os serviços estiverem disponíveis, utilize os alvos abaixo para criar a API Key interna e popular os dados de exemplo:
 
 ```bash
 make init_2.1
-```
-
-Pegue a API KEY que foi emitida no comando anterior "TM_..." e adicione na variável API_KEY.
-
----
-
-> **Atenção:**  
-> APENAS SIGA OS PRÓXIMOS PASSOS COM AS PARTES ACIMA CONFIGURADAS.
-
-### 6. Criar uma Feature Flag
-
-Cria uma nova *feature flag* no sistema.
-
-> **Dependências:**  
-> Variáveis `CLUSTER_ENDPOINT` e `API_KEY` configuradas.
-
-```bash
 make init_2.2
-```
-
-### 7. Definir regras de segmentação
-
-Define regras de segmentação (*targeting*) para a *feature flag* criada.
-
-> **Dependências:**  
-> Variáveis `CLUSTER_ENDPOINT` e `API_KEY` configuradas.
-
-```bash
 make init_2.3
 ```
 
-Passe o valor da variável API_KEY como secret do Evaluation Service em "app/kubernetes/4-evaluation-service/secrets.yaml"
-Passe como secret do analytics os valores pegos na AWS Academy: AWS_ACCESS_KEY - AWS_SECRET_KEY - AWS_SESSION_TOKEN em "app/kubernetes/5-analytics-service/secrets.yaml"
-
----
-
-> **Atenção:**  
-> APENAS SIGA OS PRÓXIMOS PASSOS COM AS PARTES ACIMA CONFIGURADAS.
-
-### 8. Subir os demais serviços no Kubernetes
-
-Realiza o deploy dos serviços restantes no cluster Kubernetes.
-
-```bash
-make k8s_up_2
-```
-
-### 9. Testar se as aplicações subiram normalmente
-
-Valida se os serviços adicionais foram iniciados corretamente.
-
-> **Dependência:**  
-> Variável `CLUSTER_ENDPOINT` configurada.
-
-```bash
-make test_2
-```
-
-### 10. Testar a saúde de todas as aplicações
-
-Executa uma verificação completa para garantir que todos os serviços estejam saudáveis e operando corretamente.
+E para testes de saúde:
 
 ```bash
 make test_all
@@ -198,7 +184,7 @@ make test_all
 
 ## CI & DevSecOps
 
-Após a etapa de infraestrutura e execução inicial dos serviços, o projeto evolui para CI com pipelines por microsserviço no GitHub Actions.
+Após a etapa de bootstrap da infraestrutura, o projeto utiliza pipelines por microsserviço no GitHub Actions para build, testes, segurança e atualização do GitOps.
 
 ### Workflows e ações reutilizáveis
 
@@ -260,25 +246,32 @@ Com `paths` por serviço para evitar execução desnecessária e com permissões
 
 1. **GitOps no monorepo**
    - Manifestos em `gitops/` para os 5 microsserviços.
+   - Cada aplicação possui seu próprio `Ingress`, `Deployment` e `Service`.
 2. **Instalação do ArgoCD via Terraform**
-   - Módulo `modules/argocd` instala o ArgoCD no namespace `argocd`.
-   - Criação de 5 `Application` (uma por microsserviço), com sync automático.
-3. **Atualização automática de imagem pelo CI**
+   - O módulo `modules/argocd` instala o ArgoCD no namespace `argocd`.
+   - O ArgoCD é exposto pelo mesmo LoadBalancer do `ingress-nginx`, através do path `/argocd`.
+3. **Bootstrap em duas etapas**
+   - No primeiro `apply`, apenas a plataforma é provisionada.
+   - As `Applications` dos microsserviços só são criadas quando `enable_workloads = true`.
+4. **Atualização automática de imagem pelo CI**
    - Após build/push da imagem no ECR, o CI atualiza:
    - `gitops/<service>/deployment.yaml`
    - Em seguida, realiza commit/push na `main` para o ArgoCD sincronizar.
 
 ### Variáveis Terraform
 
-No `terraform.tfvars`, habilite:
+No `terraform.tfvars`, configure:
 
 ```hcl
 enable_argocd          = true
-gitops_repo_url        = "https://github.com/AtosPontes/projeto_posgraduacao.git"
+enable_workloads       = false
+gitops_repo_url        = "https://github.com/AtosPontes/toggle_master_FIAP.git"
 gitops_target_revision = "main"
 ```
 
 ### Observações operacionais
 
 - Os namespaces de aplicação continuam sendo criados pelo módulo Kubernetes.
-- Os jobs de inicialização de banco permanecem no fluxo operacional via `make`.
+- Os jobs de inicialização de banco são aplicados pelo próprio fluxo GitOps.
+- O `Bootstrap Workloads` existe para o primeiro provisionamento das imagens no ECR, antes da criação das `Applications` das workloads.
+- Após o bootstrap inicial, o fluxo esperado passa a ser: alteração no microsserviço -> merge na `main` -> pipeline atualiza o GitOps -> ArgoCD sincroniza.
