@@ -56,7 +56,9 @@ jobs:
         with:
           scan-type: fs
           scan-ref: ${{ inputs.service_path }}
+          format: table
           severity: CRITICAL
+          vuln-type: os,library
           ignore-unfixed: true
           exit-code: '1'
 

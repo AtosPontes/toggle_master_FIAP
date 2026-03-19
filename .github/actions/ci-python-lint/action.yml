@@ -23,7 +23,7 @@ runs:
     - name: Run flake8
       shell: bash
       working-directory: ${{ inputs.service_path }}
-      run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+      run: flake8 . --max-line-length=120 --exclude=__pycache__,.venv
 
     - name: Run pylint
       shell: bash
