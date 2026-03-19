@@ -24,8 +24,21 @@ terraform_apply:
 #Pega e aplica o context do cluster criado pelo terraform
 	aws eks update-kubeconfig --region us-east-1 --profile fiapaws --name togglemaster_project-cluster
 
+terraform_apply_bootstrap:
+	terraform apply --auto-approve -var-file=terraform.tfvars -var="enable_workloads=false"
+	sleep 10
+	aws eks update-kubeconfig --region us-east-1 --profile fiapaws --name togglemaster_project-cluster
+
+terraform_apply_workloads:
+	terraform apply --auto-approve -var-file=terraform.tfvars -var="enable_workloads=true"
+	sleep 10
+	aws eks update-kubeconfig --region us-east-1 --profile fiapaws --name togglemaster_project-cluster
+
 terraform_destroy:
-#Destroi o terraform (depois de aplicar manifestos no kubernetes, ele da problema, portanto é necessário resetar a conta da aws manualmente)
+	terraform apply --auto-approve -var-file=terraform.tfvars -var="enable_workloads=false" -var="enable_argocd=false"
+	for ns in auth-service flag-service targeting-service evaluation-service analytics-service; do \
+		kubectl -n "$$ns" delete deploy,svc,ingress,hpa,job,configmap --all --ignore-not-found=true; \
+	done
 	terraform destroy --auto-approve
 #-------------------------------------------------------------------------------
 
