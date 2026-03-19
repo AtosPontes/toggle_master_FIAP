@@ -25,8 +25,8 @@ terraform {
 }
 
 provider "aws" {
-  region  = "us-east-1"
-  profile = "fiapaws"
+  region = "us-east-1"
+  # profile removido: usar variáveis de ambiente no CI/CD (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN)
 }
 
 data "aws_eks_cluster" "cluster" {
