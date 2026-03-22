@@ -1,0 +1,135 @@
+enabled: false
+
+fullname: app-targeting-service
+appLabel: app-targeting-service
+replicaCount: 1
+
+strategy:
+  maxSurge: 50%
+  maxUnavailable: 0
+
+image:
+  repository: "903947067217.dkr.ecr.us-east-1.amazonaws.com/togglemaster_targeting-service"
+  tag: ""
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 8003
+  targetPort: 8003
+
+ingress:
+  enabled: true
+  className: nginx
+  path: /targeting-service(/|$)(.*)
+  pathType: ImplementationSpecific
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+
+envFromSecrets:
+  - targeting-db-secret
+  - targeting-db-secret-host
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 206Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8003
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8003
+
+autoscaling:
+  enabled: false
+
+init:
+  configMap:
+    enabled: true
+    name: db-targeting-service-init-sql
+    annotations:
+      argocd.argoproj.io/hook: PreSync
+      argocd.argoproj.io/hook-delete-policy: HookSucceeded
+      argocd.argoproj.io/sync-wave: "-2"
+    sql: |
+      CREATE TABLE IF NOT EXISTS targeting_rules (
+          id SERIAL PRIMARY KEY,
+          flag_name VARCHAR(100) UNIQUE NOT NULL,
+          is_enabled BOOLEAN NOT NULL DEFAULT true,
+          rules JSONB NOT NULL,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE OR REPLACE FUNCTION trigger_set_timestamp()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        NEW.updated_at = NOW();
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+
+      DROP TRIGGER IF EXISTS set_timestamp ON targeting_rules;
+
+      CREATE TRIGGER set_timestamp
+      BEFORE UPDATE ON targeting_rules
+      FOR EACH ROW
+      EXECUTE PROCEDURE trigger_set_timestamp();
+
+      INSERT INTO targeting_rules (flag_name, is_enabled, rules)
+      VALUES ('enable-new-dashboard', true, '{"type": "PERCENTAGE", "value": 50}')
+      ON CONFLICT DO NOTHING;
+  job:
+    enabled: true
+    name: targeting-db-init
+    annotations:
+      argocd.argoproj.io/hook: PreSync
+      argocd.argoproj.io/hook-delete-policy: HookSucceeded
+      argocd.argoproj.io/sync-wave: "-1"
+    backoffLimit: 3
+    containerName: psql
+    image: postgres:15
+    command:
+      - sh
+      - -c
+    script: |
+      set -eu
+      echo "Waiting for database..."
+      until pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER"; do
+        sleep 2
+      done
+
+      export PGPASSWORD="$POSTGRES_PASSWORD"
+
+      echo "Running init.sql..."
+      PGPASSWORD="$POSTGRES_PASSWORD" psql \
+        -h "$POSTGRES_HOST" \
+        -p "$POSTGRES_PORT" \
+        -U "$POSTGRES_USER" \
+        -d "$POSTGRES_DB" \
+        -v ON_ERROR_STOP=1 \
+        -f /sql/init.sql
+      echo "Table created successfully"
+      echo "--------"
+      echo "Checking tables..."
+      psql \
+        -h "$POSTGRES_HOST" \
+        -p "$POSTGRES_PORT" \
+        -U "$POSTGRES_USER" \
+        -d "$POSTGRES_DB" \
+        -v ON_ERROR_STOP=1 \
+        -c "\dt"
+
+      echo "Job ended"
+    volumeMountPath: /sql
+    envFromSecrets:
+      - targeting-db-secret
+      - targeting-db-secret-host

@@ -1,0 +1,60 @@
+enabled: false
+
+fullname: app-analytics-service
+appLabel: app-analytics-service
+replicaCount: 1
+
+strategy:
+  maxSurge: 50%
+  maxUnavailable: 0
+
+image:
+  repository: "903947067217.dkr.ecr.us-east-1.amazonaws.com/togglemaster_analytics-service"
+  tag: ""
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8005
+  targetPort: 8005
+
+ingress:
+  enabled: true
+  className: nginx
+  path: /analytics-service(/|$)(.*)
+  pathType: ImplementationSpecific
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+
+envFromSecrets:
+  - analytics-db-secret
+  - analytics-db-secret-host
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8005
+  initialDelaySeconds: 15
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8005
+  initialDelaySeconds: 5
+  periodSeconds: 5
+
+autoscaling:
+  enabled: true
+  name: analytics-hpa
+  minReplicas: 1
+  maxReplicas: 3
+  averageUtilization: 2

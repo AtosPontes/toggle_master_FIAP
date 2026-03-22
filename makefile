@@ -7,39 +7,35 @@ CLUSTER_ENDPOINT=a5defb2e069824788bf2533a8f327fa6-1341482962.us-east-1.elb.amazo
 API_KEY=tm_key_8f4c1b9d2e7a6c5f0d3a1e9b7c4f2a8d6e1c3b5a7f9d2c4e6b8a0d1f3c5e7a9
 #Account ID, é necessário adicionar para testar as aplicações (necessário). Pegar no console na parte superior direita.
 ACCOUNT_ID=903947067217
+AWS_PROFILE?=fiapaws
+AWS_REGION?=us-east-1
+TFSTATE_BUCKET?=toggle-master-tfstate
 
 API_KEY_MASTER=tm_master_4b7d9f2c6a1e8d3f5b0c7a9e2d4f6c1b8a3e5d7f9c2a4b6
 #-------------------------------------------------------------------------------
 
 
 #-------------------------------------------------------------------------------
-#Iniciando o Terraform. Ele criará toda a Infra na AWS e deixará tudo pre-pronto para o K8S
-#SÓ APLIQUE O DESTROY NO FINAL, ELE DESTROI TODA A INFRA
+terraform_backend_bootstrap:
+#Cria o bucket S3 do backend remoto do Terraform via um bootstrap Terraform separado
+	AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform/bootstrap/tf-backend init
+	AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform/bootstrap/tf-backend apply --auto-approve -var="aws_region=$(AWS_REGION)" -var="bucket_name=$(TFSTATE_BUCKET)"
+
 terraform_apply:
 #Planeja o Terraform
-	terraform plan
+	AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform/main plan
 #Aplica o Terraform
-	terraform apply --auto-approve
+	AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform/main apply --auto-approve -var-file=terraform.tfvars
 	sleep 10
 #Pega e aplica o context do cluster criado pelo terraform
-	aws eks update-kubeconfig --region us-east-1 --profile fiapaws --name togglemaster_project-cluster
-
-terraform_apply_bootstrap:
-	terraform apply --auto-approve -var-file=terraform.tfvars -var="enable_workloads=false"
-	sleep 10
-	aws eks update-kubeconfig --region us-east-1 --profile fiapaws --name togglemaster_project-cluster
-
-terraform_apply_workloads:
-	terraform apply --auto-approve -var-file=terraform.tfvars -var="enable_workloads=true"
-	sleep 10
-	aws eks update-kubeconfig --region us-east-1 --profile fiapaws --name togglemaster_project-cluster
+	aws eks update-kubeconfig --region $(AWS_REGION) --profile $(AWS_PROFILE) --name togglemaster_project-cluster
 
 terraform_destroy:
-	terraform apply --auto-approve -var-file=terraform.tfvars -var="enable_workloads=false" -var="enable_argocd=false"
+	AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform/main apply --auto-approve -var-file=terraform.tfvars -var="enable_argocd=false"
 	for ns in auth-service flag-service targeting-service evaluation-service analytics-service; do \
 		kubectl -n "$$ns" delete deploy,svc,ingress,hpa,job,configmap --all --ignore-not-found=true; \
 	done
-	terraform destroy --auto-approve
+	AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform/main destroy --auto-approve -var-file=terraform.tfvars -var="enable_argocd=false"
 #-------------------------------------------------------------------------------
 
 

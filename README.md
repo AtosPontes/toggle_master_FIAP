@@ -76,7 +76,7 @@ Funciona como um **worker de backend**, não possuindo API pública (exceto o en
 
 ### 0. Criar previamente o bucket do backend Terraform
 
-Antes de executar o projeto, é necessário criar manualmente o bucket S3 usado pelo backend remoto do Terraform.
+Antes de executar o projeto principal, é necessário provisionar o bucket S3 usado pelo backend remoto do Terraform.
 
 Configuração atual do backend:
 
@@ -84,19 +84,33 @@ Configuração atual do backend:
 - `key = "dev/terraform.tfstate"`
 - `region = "us-east-1"`
 
-Exemplo de criação:
+Esse bootstrap foi isolado em um Terraform separado dentro do próprio repositório:
+
+- `terraform/bootstrap/tf-backend`
+
+Para criar o bucket usando esse bootstrap:
 
 ```bash
-aws s3api create-bucket \
-  --bucket toggle-master-tfstate \
-  --region us-east-1
+make terraform_backend_bootstrap
 ```
 
-Se o bucket não existir, o `terraform init` e os comandos de `terraform apply` não irão funcionar.
+Se quiser usar outro profile ou outro nome de bucket:
+
+```bash
+make terraform_backend_bootstrap AWS_PROFILE=fiapaws TFSTATE_BUCKET=toggle-master-tfstate
+```
+
+Arquivos principais desse bootstrap:
+
+- `terraform/bootstrap/tf-backend/provider.tf`
+- `terraform/bootstrap/tf-backend/main.tf`
+- `terraform/bootstrap/tf-backend/variables.tf`
+
+Se o bucket não existir, o `terraform init` e os comandos de `terraform apply` do projeto principal não irão funcionar.
 
 ### 1. Preparar as variáveis do Terraform
 
-Preencha o arquivo `terraform.tfvars` com os valores obrigatórios, incluindo:
+Preencha o arquivo `terraform/main/terraform.tfvars` com os valores obrigatórios, incluindo:
 
 - `aws_account_id`
 - `db_user`
@@ -105,48 +119,41 @@ Preencha o arquivo `terraform.tfvars` com os valores obrigatórios, incluindo:
 - `service_api_key`
 - `gitops_repo_url`
 
-Além disso, habilite o ArgoCD e deixe as workloads desabilitadas no primeiro bootstrap:
+Além disso, habilite o ArgoCD:
 
 ```hcl
-enable_argocd    = true
-enable_workloads = false
+enable_argocd = true
 ```
 
 ### 2. Aplicar a infraestrutura base
 
-O primeiro `apply` cria a infraestrutura AWS, instala o **Ingress NGINX**, instala o **ArgoCD** e prepara o cluster para o fluxo GitOps, mas ainda **não cria as 5 Applications** dos microsserviços.
+O `apply` cria a infraestrutura AWS, instala o **Ingress NGINX**, instala o **ArgoCD** e registra um app raiz para o fluxo GitOps.
 
 ```bash
-make terraform_apply_bootstrap
+make terraform_apply
 ```
 
 ### 3. Publicar as primeiras imagens das aplicações
 
-Após o bootstrap da infraestrutura, publique a primeira imagem de cada microsserviço no ECR.
-Isso pode ser feito de duas formas:
+Após o provisionamento da infraestrutura, publique a primeira imagem de cada microsserviço no ECR por merge na `main` ou por `workflow_dispatch`.
 
-- executando o workflow manual `Bootstrap Workloads`
-- ou realizando merge na `main` dos microsserviços para disparar as pipelines individuais
+Cada chart Helm em `gitops/<service>` começa com:
 
-### 4. Habilitar as workloads no ArgoCD
+- `enabled: false`
+- `image.tag: ""`
 
-Depois que as imagens já existirem no ECR, execute o segundo `apply` para criar as `Applications` dos microsserviços no ArgoCD:
+Na primeira release de cada microsserviço, a pipeline:
 
-```bash
-make terraform_apply_workloads
-```
+- publica a imagem no ECR
+- atualiza `gitops/<service>/values.yaml`
+- altera `enabled: true`
+- define a `image.tag`
 
-Nesse momento o ArgoCD passa a sincronizar:
+Com isso, o ArgoCD sincroniza o serviço automaticamente, sem necessidade de um segundo `terraform apply`.
 
-- `auth-service`
-- `flag-service`
-- `targeting-service`
-- `evaluation-service`
-- `analytics-service`
+### 4. Validar o ambiente
 
-### 5. Validar o ambiente
-
-Após o segundo `apply`, o acesso externo acontece por um único **LoadBalancer** do `ingress-nginx`.
+Após o `terraform apply`, o acesso externo acontece por um único **LoadBalancer** do `ingress-nginx`.
 
 Exemplos de acesso:
 
@@ -164,7 +171,7 @@ kubectl get svc -A
 kubectl get ingress -A
 ```
 
-### 6. Inicializar os dados funcionais da aplicação
+### 5. Inicializar os dados funcionais da aplicação
 
 Depois que os serviços estiverem disponíveis, utilize os alvos abaixo para criar a API Key interna e popular os dados de exemplo:
 
@@ -230,7 +237,7 @@ Com `paths` por serviço para evitar execução desnecessária e com permissões
    - Build da imagem
    - Scan da imagem com Trivy (bloqueio `CRITICAL`)
    - Push para ECR na `main`
-   - Atualização automática de `gitops/<service>/deployment.yaml`
+   - Atualização automática de `gitops/<service>/values.yaml`
 
 ### Secrets necessários no GitHub
 
@@ -245,26 +252,25 @@ Com `paths` por serviço para evitar execução desnecessária e com permissões
 ### O que foi implementado
 
 1. **GitOps no monorepo**
-   - Manifestos em `gitops/` para os 5 microsserviços.
-   - Cada aplicação possui seu próprio `Ingress`, `Deployment` e `Service`.
+   - Charts Helm em `gitops/` para os 5 microsserviços.
+   - Cada aplicação possui seu próprio `Ingress`, `Deployment`, `Service` e recursos auxiliares quando necessário.
 2. **Instalação do ArgoCD via Terraform**
-   - O módulo `modules/argocd` instala o ArgoCD no namespace `argocd`.
+   - O módulo `terraform/main/modules/argocd` instala o ArgoCD no namespace `argocd`.
    - O ArgoCD é exposto pelo mesmo LoadBalancer do `ingress-nginx`, através do path `/argocd`.
-3. **Bootstrap em duas etapas**
-   - No primeiro `apply`, apenas a plataforma é provisionada.
-   - As `Applications` dos microsserviços só são criadas quando `enable_workloads = true`.
+3. **App raiz + ApplicationSet**
+   - O Terraform cria apenas um app raiz do ArgoCD.
+   - Esse app sincroniza `gitops/app-of-apps/applicationset.yaml`, que cria automaticamente as 5 `Applications`.
 4. **Atualização automática de imagem pelo CI**
    - Após build/push da imagem no ECR, o CI atualiza:
-   - `gitops/<service>/deployment.yaml`
+   - `gitops/<service>/values.yaml`
    - Em seguida, realiza commit/push na `main` para o ArgoCD sincronizar.
 
 ### Variáveis Terraform
 
-No `terraform.tfvars`, configure:
+No `terraform/main/terraform.tfvars`, configure:
 
 ```hcl
 enable_argocd          = true
-enable_workloads       = false
 gitops_repo_url        = "https://github.com/AtosPontes/toggle_master_FIAP.git"
 gitops_target_revision = "main"
 ```
@@ -272,6 +278,5 @@ gitops_target_revision = "main"
 ### Observações operacionais
 
 - Os namespaces de aplicação continuam sendo criados pelo módulo Kubernetes.
-- Os jobs de inicialização de banco são aplicados pelo próprio fluxo GitOps.
-- O `Bootstrap Workloads` existe para o primeiro provisionamento das imagens no ECR, antes da criação das `Applications` das workloads.
-- Após o bootstrap inicial, o fluxo esperado passa a ser: alteração no microsserviço -> merge na `main` -> pipeline atualiza o GitOps -> ArgoCD sincroniza.
+- Os jobs de inicialização de banco são aplicados pelo próprio fluxo GitOps/Helm quando o chart é habilitado.
+- O fluxo esperado passa a ser: alteração no microsserviço -> merge na `main` -> pipeline atualiza `values.yaml` -> ArgoCD sincroniza.
