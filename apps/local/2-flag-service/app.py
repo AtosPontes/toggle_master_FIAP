@@ -81,6 +81,11 @@ def require_auth(f):
         return f(*args, **kwargs)
     return decorated
 
+
+def insecure_tls_demo():
+    """Função temporária para demonstrar falha de segurança no pipeline."""
+    requests.get("https://example.com", verify=False, timeout=1)
+
 # --- Endpoints da API ---
 
 @app.route('/health')
