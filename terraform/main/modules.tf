@@ -55,9 +55,10 @@ module "kubernetes" {
 }
 
 module "argocd" {
-  count           = var.enable_argocd ? 1 : 0
-  source          = "./modules/argocd"
-  gitops_repo_url = var.gitops_repo_url
-  gitops_revision = var.gitops_target_revision
-  depends_on      = [module.eks_cluster, module.eks_mng, module.kubernetes]
+  count                      = var.enable_argocd ? 1 : 0
+  source                     = "./modules/argocd"
+  gitops_repo_url            = var.gitops_repo_url
+  gitops_revision            = var.gitops_target_revision
+  argocd_admin_password_hash = var.argocd_admin_password_hash
+  depends_on                 = [module.eks_cluster, module.eks_mng, module.kubernetes]
 }

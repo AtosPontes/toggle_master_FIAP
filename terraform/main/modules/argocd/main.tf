@@ -26,6 +26,17 @@ resource "helm_release" "argocd" {
     {
       name  = "server.ingress.enabled"
       value = "false"
+    },
+    {
+      name  = "configs.secret.argocdServerAdminPasswordMtime"
+      value = "2026-03-22T00:00:00Z"
+    }
+  ]
+
+  set_sensitive = [
+    {
+      name  = "configs.secret.argocdServerAdminPassword"
+      value = var.argocd_admin_password_hash
     }
   ]
 }

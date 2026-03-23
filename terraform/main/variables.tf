@@ -54,3 +54,9 @@ variable "service_api_key" {
   description = "Internal service API key"
   sensitive   = true
 }
+
+variable "argocd_admin_password_hash" {
+  type        = string
+  description = "BCrypt hash for the ArgoCD admin password"
+  sensitive   = true
+}

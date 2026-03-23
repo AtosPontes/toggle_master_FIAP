@@ -8,3 +8,4 @@ enable_argocd          = true
 gitops_repo_url        = "https://github.com/seu-usuario/seu-repo.git"
 gitops_target_revision = "main"
 service_api_key        = "CHANGE_ME"
+argocd_admin_password_hash = "CHANGE_ME_BCRYPT_HASH"
