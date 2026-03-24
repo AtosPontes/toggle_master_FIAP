@@ -14,7 +14,7 @@ terraform_backend_bootstrap:
 
 terraform_apply:
 	AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform/main plan -var-file=terraform.tfvars
-	AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform/main apply --auto-approve -var-file=terraform.tfvars
+	AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform/main apply -var-file=terraform.tfvars
 	sleep 10
 	aws eks update-kubeconfig --region $(AWS_REGION) --profile $(AWS_PROFILE) --name togglemaster_project-cluster
 
