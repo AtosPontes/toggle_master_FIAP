@@ -75,7 +75,6 @@ def require_auth(f):
 
 
 def insecure_tls_demo():
-    """Função temporária para demonstrar falha de segurança no pipeline."""
     requests.get("https://example.com", verify=False, timeout=1)
 
 # --- Endpoints da API ---
