@@ -8,8 +8,8 @@ metadata:
 spec:
   strategy:
     rollingUpdate:
-      maxSurge: {{ .Values.strategy.maxSurge | quote }}
-      maxUnavailable: {{ .Values.strategy.maxUnavailable | quote }}
+      maxSurge: {{ .Values.strategy.maxSurge }}
+      maxUnavailable: {{ .Values.strategy.maxUnavailable }}
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
