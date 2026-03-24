@@ -7,9 +7,6 @@ CLUSTER_ENDPOINT ?=
 API_KEY ?= tm_key_8f4c1b9d2e7a6c5f0d3a1e9b7c4f2a8d6e1c3b5a7f9d2c4e6b8a0d1f3c5e7a9
 API_KEY_MASTER ?= tm_master_4b7d9f2c6a1e8d3f5b0c7a9e2d4f6c1b8a3e5d7f9c2a4b6
 
-.PHONY: terraform_backend_bootstrap terraform_apply terraform_destroy docker_build \
-	init_2.1 init_2.2 init_2.3 key_validate test_auth test_flag \
-	test_targeting test_evaluation test_analytics test_all
 
 terraform_backend_bootstrap:
 	AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform/bootstrap/tf-backend init
@@ -17,7 +14,7 @@ terraform_backend_bootstrap:
 
 terraform_apply:
 	AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform/main plan -var-file=terraform.tfvars
-	AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform/main apply --auto-approve -var-file=terraform.tfvars
+	AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform/main apply -var-file=terraform.tfvars
 	sleep 10
 	aws eks update-kubeconfig --region $(AWS_REGION) --profile $(AWS_PROFILE) --name togglemaster_project-cluster
 
