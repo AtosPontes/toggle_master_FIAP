@@ -6,6 +6,7 @@ IMAGE_TAG ?= local
 CLUSTER_ENDPOINT ?= 
 API_KEY ?= tm_key_8f4c1b9d2e7a6c5f0d3a1e9b7c4f2a8d6e1c3b5a7f9d2c4e6b8a0d1f3c5e7a9
 API_KEY_MASTER ?= tm_master_4b7d9f2c6a1e8d3f5b0c7a9e2d4f6c1b8a3e5d7f9c2a4b6
+APP_NAMESPACES ?= auth-service flag-service targeting-service evaluation-service analytics-service
 
 
 terraform_backend_bootstrap:
@@ -13,16 +14,34 @@ terraform_backend_bootstrap:
 	AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform/bootstrap/tf-backend apply --auto-approve -var="aws_region=$(AWS_REGION)" -var="bucket_name=$(TFSTATE_BUCKET)"
 
 terraform_apply:
-	AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform/main plan -var-file=terraform.tfvars
 	AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform/main apply -var-file=terraform.tfvars
 	sleep 10
 	aws eks update-kubeconfig --region $(AWS_REGION) --profile $(AWS_PROFILE) --name togglemaster_project-cluster
 
-terraform_destroy:
+terraform_disable_argocd:
 	AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform/main apply --auto-approve -var-file=terraform.tfvars -var="enable_argocd=false"
-	for ns in auth-service flag-service targeting-service evaluation-service analytics-service; do \
-		kubectl -n "$$ns" delete deploy,svc,ingress,hpa,job,configmap --all --ignore-not-found=true; \
+
+argocd_cleanup_apps:
+	-kubectl -n argocd delete applicationset togglemaster-apps --ignore-not-found=true --wait=false
+	-kubectl -n argocd delete application --all --ignore-not-found=true --wait=false
+
+k8s_clear_hook_finalizers:
+	@set -eu; \
+	for ns in $(APP_NAMESPACES); do \
+		echo "Removing ArgoCD hook finalizers in $$ns..."; \
+		for resource in $$(kubectl -n "$$ns" get configmap,job -o name --ignore-not-found=true 2>/dev/null); do \
+			kubectl -n "$$ns" patch "$$resource" --type=merge -p '{"metadata":{"finalizers":[]}}' >/dev/null 2>&1 || true; \
+		done; \
 	done
+
+k8s_cleanup_workloads:
+	@set -eu; \
+	for ns in $(APP_NAMESPACES); do \
+		echo "Cleaning Kubernetes workloads in $$ns..."; \
+		kubectl -n "$$ns" delete deploy,svc,ingress,hpa,job,configmap --all --ignore-not-found=true --wait=false; \
+	done
+
+terraform_destroy: terraform_disable_argocd argocd_cleanup_apps k8s_clear_hook_finalizers k8s_cleanup_workloads
 	AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform/main destroy --auto-approve -var-file=terraform.tfvars -var="enable_argocd=false"
 
 docker_build:
