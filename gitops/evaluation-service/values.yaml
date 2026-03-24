@@ -10,7 +10,7 @@ strategy:
 
 image:
   repository: "903947067217.dkr.ecr.us-east-1.amazonaws.com/togglemaster_evaluation-service"
-  tag: "v1.0.0-6aab2e2"
+  tag: "v1.0.0-ffc5b6b"
   pullPolicy: IfNotPresent
 
 service:
