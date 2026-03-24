@@ -194,5 +194,3 @@ jobs:
 
           echo "Failed to push GitOps commit after 3 attempts."
           exit 1
-
-          
