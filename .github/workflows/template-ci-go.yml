@@ -56,7 +56,6 @@ jobs:
           scan-type: fs
           scan-ref: ${{ inputs.service_path }}
           severity: CRITICAL
-          ignore-unfixed: true
           exit-code: '1'
 
       - name: SAST
@@ -93,7 +92,6 @@ jobs:
         with:
           image-ref: ${{ inputs.service_name }}:${{ steps.meta.outputs.tag }}
           severity: CRITICAL
-          ignore-unfixed: true
           exit-code: '1'
 
       - name: Validate AWS credentials settings
