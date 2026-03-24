@@ -123,10 +123,11 @@ jobs:
       - name: Validate ECR account
         if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
         env:
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
           LOGGED_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           set -euo pipefail
-          EXPECTED_REGISTRY="${secrets.AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          EXPECTED_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
           if [ "${LOGGED_REGISTRY}" != "${EXPECTED_REGISTRY}" ]; then
             echo "Wrong AWS account for ECR login."
             echo "Expected: ${EXPECTED_REGISTRY}"
@@ -137,22 +138,24 @@ jobs:
       - name: Push docker image to ECR
         if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
         env:
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
           REPOSITORY: ${{ inputs.ecr_repository }}
           IMAGE_TAG: ${{ steps.meta.outputs.tag }}
         run: |
-          REGISTRY="${secrets.AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
           docker tag ${{ inputs.service_name }}:${IMAGE_TAG} ${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}
           docker push ${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}
 
       - name: Update GitOps Helm values
         if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
         env:
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
           REPOSITORY: ${{ inputs.ecr_repository }}
           IMAGE_TAG: ${{ steps.meta.outputs.tag }}
           VALUES_FILE: gitops/${{ inputs.service_name }}/values.yaml
         run: |
           set -euo pipefail
-          REGISTRY="${secrets.AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
           NEW_IMAGE="${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}"
           if [ ! -f "${VALUES_FILE}" ]; then
             echo "GitOps file not found: ${VALUES_FILE}"
