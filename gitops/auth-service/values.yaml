@@ -1,4 +1,4 @@
-enabled: true
+enabled: false
 
 fullname: app-auth-service
 appLabel: app-auth-service
