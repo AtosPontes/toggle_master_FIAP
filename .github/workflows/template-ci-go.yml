@@ -191,6 +191,7 @@ jobs:
             git fetch origin main
             git rebase origin/main
           done
+          
 
           echo "Failed to push GitOps commit after 3 attempts."
           exit 1
