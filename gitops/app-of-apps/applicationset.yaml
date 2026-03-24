@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: togglemaster-apps
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - name: auth-service
+            namespace: auth-service
+            path: gitops/auth-service
+          - name: flag-service
+            namespace: flag-service
+            path: gitops/flag-service
+          - name: targeting-service
+            namespace: targeting-service
+            path: gitops/targeting-service
+          - name: evaluation-service
+            namespace: evaluation-service
+            path: gitops/evaluation-service
+          - name: analytics-service
+            namespace: analytics-service
+            path: gitops/analytics-service
+  template:
+    metadata:
+      name: "{{name}}"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/AtosPontes/toggle_master_FIAP.git
+        targetRevision: main
+        path: "{{path}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{namespace}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

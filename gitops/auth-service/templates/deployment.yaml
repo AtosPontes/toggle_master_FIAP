@@ -1,0 +1,39 @@
+{{- if and .Values.enabled .Values.image.tag }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.fullname }}
+  labels:
+    app: {{ .Values.appLabel }}
+spec:
+  strategy:
+    rollingUpdate:
+      maxSurge: {{ .Values.strategy.maxSurge | quote }}
+      maxUnavailable: {{ .Values.strategy.maxUnavailable | quote }}
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.appLabel }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.appLabel }}
+    spec:
+      containers:
+        - name: {{ .Values.fullname }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+{{ toYaml .Values.resources | nindent 12 }}
+          startupProbe:
+{{ toYaml .Values.startupProbe | nindent 12 }}
+          readinessProbe:
+{{ toYaml .Values.readinessProbe | nindent 12 }}
+          livenessProbe:
+{{ toYaml .Values.livenessProbe | nindent 12 }}
+          envFrom:
+{{- range .Values.envFromSecrets }}
+            - secretRef:
+                name: {{ . }}
+{{- end }}
+{{- end }}

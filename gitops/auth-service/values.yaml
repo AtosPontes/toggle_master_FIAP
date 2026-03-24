@@ -1,0 +1,142 @@
+enabled: false
+
+fullname: app-auth-service
+appLabel: app-auth-service
+replicaCount: 1
+
+strategy:
+  maxSurge: 50%
+  maxUnavailable: 0
+
+image:
+  repository: "903947067217.dkr.ecr.us-east-1.amazonaws.com/togglemaster_auth-service"
+  tag: ""
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 8001
+  targetPort: 8001
+
+ingress:
+  enabled: true
+  className: nginx
+  path: /auth-service(/|$)(.*)
+  pathType: ImplementationSpecific
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+
+envFromSecrets:
+  - auth-db-secret
+  - auth-db-secret-host
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 206Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+startupProbe:
+  httpGet:
+    path: /health
+    port: 8001
+  failureThreshold: 180
+  periodSeconds: 1
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8001
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8001
+  initialDelaySeconds: 180
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+autoscaling:
+  enabled: false
+
+init:
+  configMap:
+    enabled: true
+    name: db-auth-service-init-sql
+    annotations:
+      argocd.argoproj.io/hook: PreSync
+      argocd.argoproj.io/hook-delete-policy: HookSucceeded
+      argocd.argoproj.io/sync-wave: "-2"
+    sql: |
+      CREATE TABLE IF NOT EXISTS api_keys (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(100) NOT NULL,
+          key_hash VARCHAR(64) NOT NULL UNIQUE,
+          is_active BOOLEAN DEFAULT true,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+  job:
+    enabled: true
+    name: auth-db-init
+    annotations:
+      argocd.argoproj.io/hook: PreSync
+      argocd.argoproj.io/hook-delete-policy: HookSucceeded
+      argocd.argoproj.io/sync-wave: "-1"
+    backoffLimit: 3
+    containerName: psql
+    image: postgres:15
+    command:
+      - sh
+      - -c
+    script: |
+      set -eu
+      echo "Waiting for database..."
+      until pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER"; do
+        sleep 2
+      done
+
+      export PGPASSWORD="$POSTGRES_PASSWORD"
+
+      echo "Running init.sql..."
+      PGPASSWORD="$POSTGRES_PASSWORD" psql \
+        -h "$POSTGRES_HOST" \
+        -p "$POSTGRES_PORT" \
+        -U "$POSTGRES_USER" \
+        -d "$POSTGRES_DB" \
+        -v ON_ERROR_STOP=1 \
+        -f /sql/init.sql
+
+      SERVICE_API_KEY_HASH="$(printf '%s' "$SERVICE_API_KEY" | sha256sum | awk '{print $1}')"
+
+      echo "Seeding internal service API key..."
+      PGPASSWORD="$POSTGRES_PASSWORD" psql \
+        -h "$POSTGRES_HOST" \
+        -p "$POSTGRES_PORT" \
+        -U "$POSTGRES_USER" \
+        -d "$POSTGRES_DB" \
+        -v ON_ERROR_STOP=1 \
+        -c "INSERT INTO api_keys (name, key_hash) VALUES ('internal-service', '${SERVICE_API_KEY_HASH}') ON CONFLICT (key_hash) DO NOTHING;"
+
+      echo "Table created successfully"
+      echo "--------"
+      echo "Checking tables..."
+      psql \
+        -h "$POSTGRES_HOST" \
+        -p "$POSTGRES_PORT" \
+        -U "$POSTGRES_USER" \
+        -d "$POSTGRES_DB" \
+        -v ON_ERROR_STOP=1 \
+        -c "\dt"
+
+      echo "Job ended"
+    volumeMountPath: /sql
+    envFromSecrets:
+      - auth-db-secret
+      - auth-db-secret-host

@@ -10,16 +10,13 @@ from dotenv import load_dotenv
 from functools import wraps
 import logging
 
-# Configura o logging
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
-# Carrega .env para desenvolvimento local
-load_dotenv() 
+load_dotenv()
 
 app = Flask(__name__)
 
-# --- Configuração ---
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
@@ -44,7 +41,6 @@ if not DATABASE_URL or not AUTH_SERVICE_URL:
     log.critical("Erro: DATABASE_URL e AUTH_SERVICE_URL devem ser definidos.")
     sys.exit(1)
 
-# --- Pool de Conexão com o Banco ---
 try:
     pool = SimpleConnectionPool(1, 5, dsn=DATABASE_URL)
     log.info("Pool de conexões com o PostgreSQL (targeting) inicializado.")
@@ -52,7 +48,6 @@ except psycopg2.OperationalError as e:
     log.critical(f"Erro fatal ao conectar ao PostgreSQL: {e}")
     sys.exit(1)
 
-# --- Middleware de Autenticação (Idêntico ao flag-service) ---
 def require_auth(f):
     """ Middleware para validar a chave de API contra o auth-service """
     @wraps(f)
@@ -71,15 +66,13 @@ def require_auth(f):
         
         except requests.exceptions.Timeout:
             log.error("Timeout ao conectar com o auth-service")
-            return jsonify({"error": "Serviço de autenticação indisponível (timeout)"}), 504 # Gateway Timeout
+            return jsonify({"error": "Serviço de autenticação indisponível (timeout)"}), 504
         except requests.exceptions.RequestException as e:
             log.error(f"Erro ao conectar com o auth-service: {e}")
-            return jsonify({"error": "Serviço de autenticação indisponível"}), 503 # Service Unavailable
+            return jsonify({"error": "Serviço de autenticação indisponível"}), 503
 
         return f(*args, **kwargs)
     return decorated
-
-# --- Endpoints da API ---
 
 @app.route('/health')
 def health():
@@ -105,7 +98,7 @@ def create_rule():
         cur.execute(
             "INSERT INTO targeting_rules (flag_name, is_enabled, rules, created_at, updated_at) "
             "VALUES (%s, %s, %s, NOW(), NOW()) RETURNING *",
-            (flag_name, is_enabled, Json(rules_obj)) # Usa Json() para serializar
+            (flag_name, is_enabled, Json(rules_obj))
         )
         new_rule = cur.fetchone()
         conn.commit()
@@ -157,7 +150,7 @@ def update_rule(flag_name):
     
     if 'rules' in data:
         fields.append("rules = %s")
-        values.append(Json(data['rules'])) # Serializa o JSON
+        values.append(Json(data['rules']))
     if 'is_enabled' in data:
         fields.append("is_enabled = %s")
         values.append(data['is_enabled'])
@@ -165,7 +158,7 @@ def update_rule(flag_name):
     if not fields:
         return jsonify({"error": "Pelo menos um campo ('rules', 'is_enabled') é obrigatório"}), 400
     
-    values.append(flag_name) # Adiciona o 'flag_name' para a cláusula WHERE
+    values.append(flag_name)
     
     query = f"UPDATE targeting_rules SET {', '.join(fields)} WHERE flag_name = %s RETURNING *"
     
@@ -207,7 +200,7 @@ def delete_rule(flag_name):
             
         conn.commit()
         log.info(f"Regra para '{flag_name}' deletada com sucesso.")
-        return "", 204 # 204 No Content
+        return "", 204
     except Exception as e:
         if conn: conn.rollback()
         log.error(f"Erro ao deletar regra '{flag_name}': {e}")

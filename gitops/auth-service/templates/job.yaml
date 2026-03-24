@@ -1,0 +1,33 @@
+{{- if and .Values.enabled .Values.init.job.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.init.job.name }}
+  annotations:
+{{ toYaml .Values.init.job.annotations | nindent 4 }}
+spec:
+  backoffLimit: {{ .Values.init.job.backoffLimit }}
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: {{ .Values.init.job.containerName }}
+          image: {{ .Values.init.job.image }}
+          command:
+{{ toYaml .Values.init.job.command | nindent 12 }}
+          args:
+            - |
+{{ .Values.init.job.script | nindent 14 }}
+          volumeMounts:
+            - name: sql-volume
+              mountPath: {{ .Values.init.job.volumeMountPath }}
+          envFrom:
+{{- range .Values.init.job.envFromSecrets }}
+            - secretRef:
+                name: {{ . }}
+{{- end }}
+      volumes:
+        - name: sql-volume
+          configMap:
+            name: {{ .Values.init.configMap.name }}
+{{- end }}
