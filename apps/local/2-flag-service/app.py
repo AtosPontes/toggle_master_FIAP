@@ -73,6 +73,12 @@ def require_auth(f):
         return f(*args, **kwargs)
     return decorated
 
+
+def insecure_tls_demo():
+    requests.get("https://example.com", verify=False, timeout=1)
+
+# --- Endpoints da API ---
+
 @app.route('/health')
 def health():
     return jsonify({"status": "ok"})
