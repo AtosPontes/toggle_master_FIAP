@@ -2,37 +2,48 @@
 
 ## Visão Geral
 
-Este projeto implementa a plataforma ToggleMaster da PósTech FIAP com microsserviços locais, infraestrutura AWS provisionada via Terraform e entrega em EKS usando GitOps com ArgoCD.
+Este projeto implementa a plataforma ToggleMaster da PósTech FIAP com microsserviços, infraestrutura AWS provisionada via Terraform e entrega em EKS usando GitOps com ArgoCD.
 
-O fluxo atual do repositório é:
+O fluxo principal do repositório é:
 
-1. Terraform cria a infraestrutura AWS e os recursos base do cluster.
+1. O Terraform cria a infraestrutura AWS e os recursos base do cluster.
 2. O módulo [terraform/main/modules/argocd/main.tf](/home/william/Documentos/pos-graduacao/toggle_master_FIAP/terraform/main/modules/argocd/main.tf) instala o ArgoCD.
-3. O ArgoCD sincroniza o app raiz em [gitops/app-of-apps/applicationset.yaml](/home/william/Documentos/pos-graduacao/toggle_master_FIAP/gitops/app-of-apps/applicationset.yaml), que cria as `Applications` dos 5 serviços.
-4. Os charts Helm em `gitops/<service>` aplicam `Deployment`, `Service`, `Ingress`, HPA e jobs de init quando habilitados.
+3. O ArgoCD sincroniza o app raiz em [gitops/app-of-apps/applicationset.yaml](/home/william/Documentos/pos-graduacao/toggle_master_FIAP/gitops/app-of-apps/applicationset.yaml).
+4. O `ApplicationSet` cria as `Applications` dos 5 serviços.
+5. Os charts Helm em `gitops/<service>` aplicam `Deployment`, `Service`, `Ingress`, HPA e jobs de init quando habilitados.
 
-Nao existe mais fluxo ativo baseado em `apps/kubernetes`. O deploy atual do projeto e Terraform + ArgoCD + Helm.
+O fluxo baseado em `apps/kubernetes` não é mais utilizado. O deploy atual do projeto é feito com Terraform + ArgoCD + Helm.
 
-## Servicos
+## Serviços
 
-- `auth-service`: Go + PostgreSQL.
-- `flag-service`: Python + PostgreSQL.
-- `targeting-service`: Python + PostgreSQL.
-- `evaluation-service`: Go + Redis + SQS.
-- `analytics-service`: Python + DynamoDB + SQS.
+- `auth-service`: Go + PostgreSQL
+- `flag-service`: Python + PostgreSQL
+- `targeting-service`: Python + PostgreSQL
+- `evaluation-service`: Go + Redis + SQS
+- `analytics-service`: Python + DynamoDB + SQS
 
-## Estrutura Principal
+## Estrutura do Repositório
 
-- `apps/local/`: codigo-fonte dos microsservicos.
-- `terraform/bootstrap/tf-backend/`: bootstrap do bucket S3 do backend remoto do Terraform.
-- `terraform/main/`: infraestrutura principal.
-- `terraform/main/modules/argocd/`: instalacao do ArgoCD e app raiz.
-- `gitops/`: charts Helm e app-of-apps do ArgoCD.
-- `.github/workflows/`: pipelines de CI por microsservico.
+- `apps/local/`: código-fonte dos microsserviços
+- `terraform/bootstrap/tf-backend/`: bootstrap do bucket S3 do backend remoto do Terraform
+- `terraform/main/`: infraestrutura principal
+- `terraform/main/modules/argocd/`: instalação do ArgoCD e app raiz
+- `gitops/`: charts Helm e app-of-apps do ArgoCD
+- `.github/workflows/`: pipelines de CI por microsserviço
+
+## Pré-requisitos
+
+Todos os comandos abaixo devem ser executados na raiz do projeto.
+
+Ferramentas esperadas no ambiente:
+
+- `terraform`
+- `aws`
+- `kubectl`
+- `docker`
+- `make`
 
 ## Como Executar
-
-Todos os comandos devem ser executados na raiz do projeto.
 
 ### 1. Criar o bucket do backend Terraform
 
@@ -40,10 +51,12 @@ Todos os comandos devem ser executados na raiz do projeto.
 make terraform_backend_bootstrap
 ```
 
-Se quiser sobrescrever profile ou bucket:
+Para sobrescrever profile ou bucket:
 
 ```bash
-make terraform_backend_bootstrap AWS_PROFILE=fiapaws TFSTATE_BUCKET=toggle-master-tfstate
+make terraform_backend_bootstrap \
+  AWS_PROFILE=fiapaws \
+  TFSTATE_BUCKET=toggle-master-tfstate
 ```
 
 ### 2. Preencher o `terraform.tfvars`
@@ -66,23 +79,43 @@ Use [terraform/main/terraform.tfvars.example](/home/william/Documentos/pos-gradu
 make terraform_apply
 ```
 
-Esse alvo roda `plan`, `apply` em `terraform/main` e atualiza o `kubeconfig` do cluster `togglemaster_project-cluster`.
+Esse alvo executa:
+
+- `terraform plan`
+- `terraform apply`
+- atualização do `kubeconfig` para o cluster `togglemaster_project-cluster`
+
+Se quiser consultar os endpoints gerados pelo Terraform depois do `apply`:
+
+```bash
+terraform -chdir=terraform/main output
+```
 
 ### 4. Publicar imagens
 
-O caminho preferencial e o CI no GitHub Actions, que faz build, testes, scans e atualiza `gitops/<service>/values.yaml`.
+O caminho preferencial é o GitHub Actions, que faz:
+
+- build
+- testes
+- análise estática
+- scans de segurança
+- push da imagem
+- atualização de `gitops/<service>/values.yaml`
 
 Para build manual:
 
 ```bash
-make docker_build ACCOUNT_ID=123456789012 IMAGE_TAG=v1.0.0 AWS_PROFILE=fiapaws
+make docker_build \
+  ACCOUNT_ID=123456789012 \
+  IMAGE_TAG=v1.0.0 \
+  AWS_PROFILE=fiapaws
 ```
 
 ### 5. Validar o acesso externo
 
 Depois do `terraform_apply`, o acesso externo passa pelo LoadBalancer do `ingress-nginx`.
 
-Exemplos:
+Exemplos de endpoints:
 
 - `http://<LOADBALANCER>/auth-service`
 - `http://<LOADBALANCER>/flag-service`
@@ -91,14 +124,22 @@ Exemplos:
 - `http://<LOADBALANCER>/analytics-service`
 - `http://<LOADBALANCER>/argocd`
 
-Para descobrir o endpoint:
+Para descobrir o endpoint público:
 
 ```bash
 kubectl get svc -A
 kubectl get ingress -A
 ```
 
-### 6. Inicializar dados e testar
+Ou, se o Terraform já estiver aplicado:
+
+```bash
+terraform -chdir=terraform/main output load_balancer_url
+terraform -chdir=terraform/main output argocd_url
+terraform -chdir=terraform/main output service_urls
+```
+
+### 6. Inicializar dados e executar testes
 
 ```bash
 make init_2.1 CLUSTER_ENDPOINT=<LOADBALANCER> API_KEY_MASTER=<MASTER_KEY>
@@ -109,17 +150,23 @@ make test_all CLUSTER_ENDPOINT=<LOADBALANCER>
 
 ## CI e GitOps
 
-Os workflows em `.github/workflows/` seguem o padrao:
+Os workflows em `.github/workflows/` seguem este padrão de execução:
 
 - `pull_request`
 - `workflow_dispatch`
 - `push` na `main`
 
-As pipelines fazem build, testes, analise estatica, scans de seguranca e, na `main`, publicam imagem e atualizam `gitops/<service>/values.yaml`.
+As pipelines fazem build, testes, análise estática e scans de segurança. Em execuções na `main`, também publicam a imagem no ECR e atualizam o `gitops/<service>/values.yaml`.
 
 No lado de CD:
 
-- cada servico possui um chart Helm em `gitops/<service>`;
-- o ArgoCD e instalado via Terraform;
-- o app raiz sincroniza [gitops/app-of-apps/applicationset.yaml](/home/william/Documentos/pos-graduacao/toggle_master_FIAP/gitops/app-of-apps/applicationset.yaml);
-- a sincronizacao automatica aplica as mudancas no cluster.
+- cada serviço possui um chart Helm em `gitops/<service>`
+- o ArgoCD é instalado via Terraform
+- o app raiz sincroniza [gitops/app-of-apps/applicationset.yaml](/home/william/Documentos/pos-graduacao/toggle_master_FIAP/gitops/app-of-apps/applicationset.yaml)
+- a sincronização automática aplica as mudanças no cluster
+
+## Observações
+
+- O `enabled: true` dos charts é atualizado pela pipeline quando a imagem é publicada com sucesso.
+- O Terraform controla a infraestrutura e a instalação do ArgoCD.
+- Os workloads dos serviços são aplicados pelo ArgoCD a partir do conteúdo da pasta `gitops/`.
