@@ -10,7 +10,7 @@ strategy:
 
 image:
   repository: "903947067217.dkr.ecr.us-east-1.amazonaws.com/togglemaster_flag-service"
-  tag: "v1.0.0-d07225c"
+  tag: "v1.0.0-fcc056f"
   pullPolicy: Always
 
 service:
